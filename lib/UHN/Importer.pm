@@ -34,7 +34,7 @@ sub import_varscan_file {
   ## Make a temporary file place, but we need to track this, because we
   ## are going to need this file...
 
-  my ($temp_fh, $temp_filename) = tempfile( "varscanXXXXXX.maf", DIR => $cfg->{TEMP_DIRECTORY});
+  my ($temp_fh, $temp_filename) = tempfile( "varscanXXXXXX", SUFFIX '.maf', DIR => $cfg->{TEMP_DIRECTORY});
   $temp_fh->close();
 
   my $command = {
