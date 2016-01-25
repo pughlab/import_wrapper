@@ -40,7 +40,7 @@ $logger->info("Reading config file: $config");
 my $cfg = Config::Any->load_files({files => ['defaults.yml', $config], use_ext => 1});
 
 my @hashes = map {
-  my ($key) = keys $_;
+  my ($key) = keys %$_;
   $_->{$key};
 } @$cfg;
 

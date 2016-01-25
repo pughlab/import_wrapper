@@ -11,7 +11,7 @@ use Carp;
 
 sub get_sample_identifiers {
   my ($file) = @_;
-  my $fh = open("<", $file, 'r') || croak("Can't open file: $file: $!");
+  open(my $fh, "<", $file) || croak("Can't open file: $file: $!");
   my $header;
   while(<$fh>) {
     chomp;
