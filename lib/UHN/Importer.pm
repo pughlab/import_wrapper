@@ -5,6 +5,8 @@ use warnings;
 
 use Carp;
 
+use File::Temp qw/ tempfile tempdir /;
+
 use UHN::BuildCommands;
 use UHN::Samples;
 
