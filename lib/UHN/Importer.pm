@@ -19,7 +19,7 @@ sub build_import {
   foreach my $command (@commands) {
     my @args = ($command->{script}, @{$command->{arguments}});
     $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
-    system(@args) or do {
+    system(@args) == 0 or do {
       $cfg->{LOGGER}->info("Command failed: $?");
       croak($?);
     }
