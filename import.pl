@@ -8,6 +8,8 @@ use Getopt::Long;
 use Config::Any;
 use Hash::Merge::Simple qw/merge/;
 use File::Temp;
+use File::Spec;
+use File::Path qw(make_path);
 
 use UHN::Importer;
 
@@ -25,11 +27,13 @@ EOT
 my $logger = get_logger();
 
 my $config = 'import.yml';
+my $output = 'out';
 my $help;
 
 GetOptions(
   'help|?' => \$help,
   'config=s' => \$config,
+  'output=s' => \$output,
 ) or die("Error in command line arguments\n");
 
 if (! -e $config) {
@@ -49,6 +53,12 @@ $cfg = Hash::Merge::Simple->merge(@hashes);
 $cfg->{PERL_EXECUTABLE} = $^X;
 $cfg->{LOGGER} = $logger;
 $cfg->{TEMP_DIRECTORY} = File::Temp->newdir();
+
+$output = File::Spec->rel2abs($output);
+if (! -d $output) {
+  make_path($output);
+}
+$cfg->{OUTPUT} = $output;
 
 UHN::Importer::build_import($cfg);
 

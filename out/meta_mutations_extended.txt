@@ -1,0 +1,7 @@
+cancer_study_identifier: impact_compact
+genetic_alteration_type: MUTATION_EXTENDED
+stable_id: impact_compact_mutations
+profile_name: Mutations
+show_profile_in_analysis_tab: 1
+datatype: MAF
+profile_description: Mutations

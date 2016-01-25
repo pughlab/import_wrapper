@@ -5,3 +5,16 @@ vep_path: '/mnt/work1/software/vep/83'
 vep_data: '/mnt/work1/data/commondata/ensembl/vep/83'
 vep_forks: 1
 ref_fasta: '/mnt/work1/data/commondata/ensembl/vep/83/homo_sapiens/83_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz'
+
+## Default meta values
+cancer_study:
+  groups: ''
+  dedicated_color: 'Black'
+  pmid: ''
+
+mutations:
+  genetic_alteration_type: 'MUTATION_EXTENDED'
+  datatype: 'MAF'
+  show_profile_in_analysis_tab: true
+  profile_name: 'Mutations'
+  profile_description: 'Mutations'

@@ -5,3 +5,12 @@ mutect_directory: '/mnt/work1/users/suzannegroup/TSACP/MUTECT_deidentified'
 varscan_directory: '/mnt/work1/users/suzannegroup/TSACP/VARSCAN2_deidentified'
 
 clinical_file: ''
+
+cancer_study:
+  identifier: 'impact_compact'
+  name: 'IMPACT/COMPACT'
+  description: 'test'
+  type_of_cancer: 'mixed'
+  groups: ''
+  dedicated_color: 'Black'
+  short_name: 'IMPACT/COMPACT'
