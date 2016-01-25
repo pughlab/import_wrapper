@@ -11,6 +11,9 @@ use Carp;
 
 sub get_sample_identifiers {
   my ($file) = @_;
+  if (! -f $file) {
+    croak("File doesn't exist: $file: $!");
+  }
   open(my $fh, "<", $file) || croak("Can't open file: $file: $!");
   my $header;
   while(<$fh>) {
