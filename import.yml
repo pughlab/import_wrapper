@@ -1,0 +1,7 @@
+---
+
+mutect_directory: '/mnt/work1/users/suzannegroup/TSACP/MUTECT_deidentified'
+
+varscan_directory: '/mnt/work1/users/suzannegroup/TSACP/VARSCAN2_deidentified'
+
+clinical_file: ''

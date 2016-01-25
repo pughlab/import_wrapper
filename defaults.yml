@@ -1,0 +1,7 @@
+vcf2maf: 'scripts/vcf2maf.pl'
+
+## VEP configuration settings
+vep_path: 'vep-path'
+vep_data: 'vep-data'
+vep_forks: 1
+ref_fasta: ''
