@@ -7,6 +7,7 @@ use lib "$FindBin::Bin/lib";
 use Getopt::Long;
 use Config::Any;
 use Hash::Merge::Simple qw/merge/;
+use File::Temp;
 
 use UHN::Importer;
 
@@ -47,6 +48,7 @@ my @hashes = map {
 $cfg = Hash::Merge::Simple->merge(@hashes);
 $cfg->{PERL_EXECUTABLE} = $^X;
 $cfg->{LOGGER} = $logger;
+$cfg->{TEMP_DIRECTORY} = File::Temp->newdir();
 
 UHN::Importer::build_import($cfg);
 
