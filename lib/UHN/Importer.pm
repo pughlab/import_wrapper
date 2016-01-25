@@ -136,9 +136,8 @@ sub write_extended_mutations_data {
 sub write_meta_file {
   my ($file, $data) =  @_;
   open(my $fh, ">", $file) || croak("Can't open file: $file: $!");
-  while(my ($key, $value) = each %$data) {
-    $DB::single = 1;
-    print $fh "$key: $value\n";
+  foreach my $key (sort keys %$data) {
+    print $fh "$key: $data{$key\n";
   }
   close($fh);
 }
