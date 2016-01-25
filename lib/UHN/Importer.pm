@@ -20,7 +20,7 @@ sub build_import {
     my @args = ($command->{script}, @{$command->{arguments}});
     $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
     system(@args) == 0 or do {
-      $cfg->{LOGGER}->info("Command failed: $?");
+      $cfg->{LOGGER}->error("Command failed: $?");
       croak($?);
     }
   }
@@ -30,6 +30,10 @@ sub import_varscan_file {
   my ($cfg, $base, $path) = @_;
 
   my ($tumour, $normal) = UHN::Samples::get_sample_identifiers($path);
+  if (! $tumour || ! $normal) {
+    $cfg->{LOGGER}->error("Can't extract tumour/normal sample identifiers from: $path");
+    croak("Can't extract tumour/normal sample identifiers from: $path");
+  }
 
   ## Make a temporary file place, but we need to track this, because we
   ## are going to need this file...
