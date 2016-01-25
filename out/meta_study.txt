@@ -1,8 +1,0 @@
-groups: 
-dedicated_color: Black
-description: test
-pmid: 
-cancer_study_identifier: impact_compact
-name: IMPACT/COMPACT
-short_name: IMPACT/COMPACT
-type_of_cancer: mixed
