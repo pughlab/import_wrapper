@@ -16,7 +16,7 @@ sub build_import {
 
   foreach my $command (@commands) {
     my @args = ($command->{script}, @{$command->{arguments}});
-    $cfg->{LOGGER}->info("Executing: " + join(" ", @args));
+    $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
     system(@args);
   }
 }
