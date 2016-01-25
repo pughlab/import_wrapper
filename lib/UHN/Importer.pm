@@ -8,7 +8,7 @@ use Carp;
 use UHN::BuildCommands;
 use UHN::Samples;
 
-sub import {
+sub build_import {
   my ($cfg) = @_;
 
   my $varscan_directory = $cfg->{varscan_directory} // croak("Missing varscan_directory configuration");
@@ -16,7 +16,8 @@ sub import {
 
   foreach my $command (@commands) {
     my @args = ($command->{script}, @{$command->{arguments}});
-    $cfg->{LOGGER}->info("Executing")
+    $cfg->{LOGGER}->info("Executing: " + join(" ", @args));
+    system(@args);
   }
 }
 

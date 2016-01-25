@@ -48,7 +48,7 @@ $cfg = Hash::Merge::Simple->merge(@hashes);
 $cfg->{PERL_EXECUTABLE} = $^X;
 $cfg->{LOGGER} = $logger;
 
-UHN::Importer::import($cfg);
+UHN::Importer::build_import($cfg);
 
 pod2usage(1) if $help;
 
