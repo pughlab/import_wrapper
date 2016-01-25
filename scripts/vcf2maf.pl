@@ -8,6 +8,7 @@ use IO::File;
 use Getopt::Long qw( GetOptions );
 use Pod::Usage qw( pod2usage );
 use Config;
+use File::Temp qw(tempfile);
 
 # Set any default paths and constants
 my ( $tumor_id, $normal_id ) = ( "TUMOR", "NORMAL" );
@@ -210,8 +211,9 @@ if( $input_vcf ) {
     ( -s $input_vcf ) or die "ERROR: Provided VCF file is missing or empty!\nPath: $input_vcf\n";
     ( $input_vcf !~ m/\.(gz|bz2|bcf)$/ ) or die "ERROR: Compressed or binary VCFs are not supported\n";
 
-    $output_vcf = $input_vcf;
-    $output_vcf =~ s/(\.vcf)*$/.vep.vcf/;
+    ## Fixed to not assume we can write to the input directory
+    my ($temp_fh, $output_vcf) = tempfile( "vep_output_XXXXXX", SUFFIX => '.vep.vcf');
+    $temp_fh->close();
 
     # Skip running VEP if an annotated VCF already exists
     unless( -s $output_vcf ) {
