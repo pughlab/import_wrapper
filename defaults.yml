@@ -7,6 +7,8 @@ vep_forks: 1
 vep_dir_plugins: '/mnt/work1/data/commondata/ensembl/vep/83/Plugins'
 ref_fasta: '/mnt/work1/data/commondata/ensembl/vep/83/homo_sapiens/83_GRCh37'
 
+max_processes: 12
+
 ## Default meta values
 cancer_study:
   groups: ''

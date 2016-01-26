@@ -7,6 +7,8 @@ use Carp;
 
 use File::Temp qw/ tempfile tempdir /;
 
+use Parallel::ForkManager;
+
 use UHN::BuildCommands;
 use UHN::Samples;
 
@@ -51,14 +53,18 @@ sub build_import {
   my @varscan_commands = UHN::BuildCommands::scan_paths($cfg, \&import_varscan_file, $varscan_directory);
   my @commands = (@mutect_commands, @varscan_commands);
 
+  my $pm = new Parallel::ForkManager($cfg->{max_processes});
   foreach my $command (@commands) {
     my @args = ($command->{script}, @{$command->{arguments}});
     $cfg->{LOGGER}->info("Processing file $command->{index}: $command->{description}");
     $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
+
+    my $pid = $pm->start and next;
     system(@args) == 0 or do {
       $cfg->{LOGGER}->error("Command failed: $?");
       croak($?);
     };
+    $pm->finish;
   }
 
   write_clinical_data($cfg, $clinical_data_file, @commands);
