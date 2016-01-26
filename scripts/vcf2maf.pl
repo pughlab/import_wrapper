@@ -211,6 +211,7 @@ if( $custom_enst_file ) {
 ## Fixed to not assume we can write to the input directory
 my ($temp_fh, $output_vcf) = tempfile( "vep_output_XXXXXX", SUFFIX => '.vep.vcf', TMPDIR => 1);
 $temp_fh->close();
+unlink($output_vcf);
 
 if( $input_vcf ) {
     ( -s $input_vcf ) or die "ERROR: Provided VCF file is missing or empty!\nPath: $input_vcf\n";
