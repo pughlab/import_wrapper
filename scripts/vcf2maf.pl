@@ -209,13 +209,13 @@ if( $custom_enst_file ) {
 
 # Annotate variants in given VCF to all possible transcripts
 my $output_vcf;
+## Fixed to not assume we can write to the input directory
+my ($temp_fh, $output_vcf) = tempfile( "vep_output_XXXXXX", SUFFIX => '.vep.vcf', TMPDIR => 1);
+$temp_fh->close();
+
 if( $input_vcf ) {
     ( -s $input_vcf ) or die "ERROR: Provided VCF file is missing or empty!\nPath: $input_vcf\n";
     ( $input_vcf !~ m/\.(gz|bz2|bcf)$/ ) or die "ERROR: Compressed or binary VCFs are not supported\n";
-
-    ## Fixed to not assume we can write to the input directory
-    my ($temp_fh, $output_vcf) = tempfile( "vep_output_XXXXXX", SUFFIX => '.vep.vcf');
-    $temp_fh->close();
 
     # Skip running VEP if an annotated VCF already exists
     unless( -s $output_vcf ) {
