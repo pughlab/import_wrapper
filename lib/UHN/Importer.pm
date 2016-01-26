@@ -48,7 +48,6 @@ sub build_import {
   my @mutect_commands = UHN::BuildCommands::scan_paths($cfg, \&import_mutect_file, $mutect_directory);
   my @varscan_commands = UHN::BuildCommands::scan_paths($cfg, \&import_varscan_file, $varscan_directory);
 
-  my $count = 0;
   foreach my $command (@mutect_commands, @varscan_commands) {
     my @args = ($command->{script}, @{$command->{arguments}});
     $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
@@ -56,7 +55,6 @@ sub build_import {
       $cfg->{LOGGER}->error("Command failed: $?");
       croak($?);
     };
-    last if ($count++ == 5);
   }
 
   # Now we can merge the commands into a new and final MAF file
@@ -105,7 +103,7 @@ sub import_varscan_file {
 sub merge_mafs {
   my ($cfg, $output, @mafs) = @_;
 
-  my $maf_fh = IO::File->new($output, ">") or die "ERROR: Couldn't open output file: $output!\n";
+  my $maf_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
 
   my $header1 = "#version 2.4\n";
   my $header2 = join("\t", @maf_header) . "\n";
@@ -113,7 +111,7 @@ sub merge_mafs {
 
   foreach my $maf (@mafs) {
     $cfg->{LOGGER}->info("Reading generated MAF: $maf");
-    my $input_fh = IO::File->new($maf, "<") or croak "ERROR: Couldn't open input file: $maf!\n";
+    my $input_fh = IO::File->new($maf, "<") or carp "ERROR: Couldn't open input file: $maf!\n";
     while(<$input_fh>) {
       next if $_ eq $header1;
       next if $_ eq $header2;
