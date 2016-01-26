@@ -36,6 +36,7 @@ sub scan_paths {
   my $options = {
     wanted => $caller,
     no_chdir => 1,
+    preprocess => sub { return sort @_ },
   };
   File::Find::find($caller, @directories);
 
