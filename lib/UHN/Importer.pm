@@ -129,18 +129,18 @@ sub write_clinical_data {
      label => 'SAMPLE',
      header => 'SAMPLE_ID',
      count => 1}
-  )
+  );
 
   my $output_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
-  $maf_fh->print("#" . join("\t", map { $_->{name} } @headers) . "\n");
-  $maf_fh->print("#" . join("\t", map { $_->{description} } @headers) . "\n");
-  $maf_fh->print("#" . join("\t", map { $_->{type} } @headers) . "\n");
-  $maf_fh->print("#" . join("\t", map { $_->{label} } @headers) . "\n");
-  $maf_fh->print("#" . join("\t", map { $_->{count} } @headers) . "\n");
-  $maf_fh->print(join("\t", map { $_->{header} } @headers) . "\n");
+  $output_fh->print("#" . join("\t", map { $_->{name} } @headers) . "\n");
+  $output_fh->print("#" . join("\t", map { $_->{description} } @headers) . "\n");
+  $output_fh->print("#" . join("\t", map { $_->{type} } @headers) . "\n");
+  $output_fh->print("#" . join("\t", map { $_->{label} } @headers) . "\n");
+  $output_fh->print("#" . join("\t", map { $_->{count} } @headers) . "\n");
+  $output_fh->print(join("\t", map { $_->{header} } @headers) . "\n");
 
   foreach my $command (@commands) {
-    $maf_fh->print(join("\t", $command->{patient}, $command->{sample}) . "\n");
+    $output_fh->print(join("\t", $command->{patient}, $command->{sample}) . "\n");
   }
 }
 
