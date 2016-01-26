@@ -14,6 +14,7 @@ use File::Temp qw(tempfile);
 my ( $tumor_id, $normal_id ) = ( "TUMOR", "NORMAL" );
 my ( $vep_path, $vep_data, $vep_forks, $ref_fasta ) = ( "$ENV{HOME}/vep", "$ENV{HOME}/.vep", 4, "$ENV{HOME}/.vep/homo_sapiens/82_GRCh37/Homo_sapiens.GRCh37.75.dna.primary_assembly.fa.gz" );
 my ( $species, $ncbi_build, $maf_center, $min_hom_vaf ) = ( "homo_sapiens", "GRCh37", ".", 0.7 );
+my ( $vep_dir_plugins ) = ();
 my $perl_bin = $Config{perlpath};
 
 # Hash to convert 3-letter amino-acid codes to their 1-letter codes
