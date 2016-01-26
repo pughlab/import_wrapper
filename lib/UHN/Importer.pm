@@ -113,7 +113,7 @@ sub merge_mafs {
 
   foreach my $maf (@mafs) {
     $cfg->{LOGGER}->info("Reading generated MAF: $maf");
-    my $input_fh = IO::File->new($output, "<") or croak "ERROR: Couldn't open input file: $maf!\n";
+    my $input_fh = IO::File->new($maf, "<") or croak "ERROR: Couldn't open input file: $maf!\n";
     while(<$input_fh>) {
       next if $_ eq $header1;
       next if $_ eq $header2;
