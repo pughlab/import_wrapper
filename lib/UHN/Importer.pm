@@ -60,12 +60,12 @@ sub build_import {
     };
   }
 
+  write_clinical_data($cfg, $clinical_data_file, @commands);
+
   # Now we can merge the commands into a new and final MAF file
   $cfg->{LOGGER}->info("Merging MAF files into: $mutations_data_file");
   my @mafs = map { $_->{output} } (@commands);
   write_extended_mutations_data($cfg, $mutations_data_file, @mafs);
-
-  write_clinical_data($cfg, $clinical_data_file, @commands);
 
   my %core_meta = ();
   $core_meta{cancer_study_identifier} =              $cfg->{cancer_study}->{identifier};
