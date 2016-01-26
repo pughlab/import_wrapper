@@ -41,14 +41,17 @@ sub build_import {
 
   my $study_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_study.txt");
   my $mutations_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_mutations_extended.txt");
+  my $clinical_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_clinical.txt");
   my $mutations_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_mutations_extended.txt");
+  my $clinical_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_clinical.txt");
 
   my $mutect_directory = $cfg->{mutect_directory} // croak("Missing mutect_directory configuration");
   my $varscan_directory = $cfg->{varscan_directory} // croak("Missing varscan_directory configuration");
   my @mutect_commands = UHN::BuildCommands::scan_paths($cfg, \&import_mutect_file, $mutect_directory);
   my @varscan_commands = UHN::BuildCommands::scan_paths($cfg, \&import_varscan_file, $varscan_directory);
+  my @commands = (@mutect_commands, @varscan_commands);
 
-  foreach my $command (@mutect_commands, @varscan_commands) {
+  foreach my $command (@commands) {
     my @args = ($command->{script}, @{$command->{arguments}});
     $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
     system(@args) == 0 or do {
@@ -59,8 +62,10 @@ sub build_import {
 
   # Now we can merge the commands into a new and final MAF file
   $cfg->{LOGGER}->info("Merging MAF files into: $mutations_data_file");
-  my @mafs = map { $_->{output} } (@mutect_commands, @varscan_commands);
-  merge_mafs($cfg, $mutations_data_file, @mafs);
+  my @mafs = map { $_->{output} } (@commands);
+  write_extended_mutations_data($cfg, $mutations_data_file, @mafs);
+
+  write_clinical_data($cfg, $clinical_data_file, @commands);
 
   my %core_meta = ();
   $core_meta{cancer_study_identifier} =              $cfg->{cancer_study}->{identifier};
@@ -82,12 +87,20 @@ sub build_import {
   $mutations_meta{profile_description} =             $cfg->{mutations}->{profile_description};
   $mutations_meta{profile_name} =                    $cfg->{mutations}->{profile_name};
 
+  my %clinical_meta = %core_meta;
+  $clinical_meta{stable_id} =                        $clinical_meta{cancer_study_identifier}."_clinical";
+  $clinical_meta{genetic_alteration_type} =          $cfg->{clinical}->{genetic_alteration_type};
+  $clinical_meta{datatype} =                         $cfg->{clinical}->{datatype};
+  $clinical_meta{show_profile_in_analysis_tab} =     $cfg->{clinical}->{show_profile_in_analysis_tab};
+  $clinical_meta{profile_description} =              $cfg->{clinical}->{profile_description};
+  $clinical_meta{profile_name} =                     $cfg->{clinical}->{profile_name};
+
   ## Now we can do the unbelievable task of building a new file which contains the
   ## MAF output of every single of these, merged.
 
   write_meta_file($study_meta_file, \%study_meta);
   write_meta_file($mutations_meta_file, \%mutations_meta);
-  write_extended_mutations_data($mutations_data_file, @mutect_commands, @varscan_commands);
+  write_meta_file($clinical_meta_file, \%clinical_meta);
 }
 
 sub import_mutect_file {
@@ -100,7 +113,38 @@ sub import_varscan_file {
   import_vcf_file($cfg, 'varscan', $base, $path);
 }
 
-sub merge_mafs {
+sub write_clinical_data {
+  my ($cfg, $output, @commands) = @_;
+
+  my @headers = (
+    {name => 'Patient Identifier',
+     description => 'Patient Identifier',
+     type => 'STRING',
+     label => 'PATIENT',
+     header => 'PATIENT_ID',
+     count => 1},
+    {name => 'Sample Identifier',
+     description => 'Sample Identifier',
+     type => 'STRING',
+     label => 'SAMPLE',
+     header => 'SAMPLE_ID',
+     count => 1}
+  )
+
+  my $output_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
+  $maf_fh->print("#" . join("\t", map { $_->{name} } @headers) . "\n");
+  $maf_fh->print("#" . join("\t", map { $_->{description} } @headers) . "\n");
+  $maf_fh->print("#" . join("\t", map { $_->{type} } @headers) . "\n");
+  $maf_fh->print("#" . join("\t", map { $_->{label} } @headers) . "\n");
+  $maf_fh->print("#" . join("\t", map { $_->{count} } @headers) . "\n");
+  $maf_fh->print(join("\t", map { $_->{header} } @headers) . "\n");
+
+  foreach my $command (@commands) {
+    $maf_fh->print(join("\t", $command->{patient}, $command->{sample}) . "\n");
+  }
+}
+
+sub write_extended_mutations_data {
   my ($cfg, $output, @mafs) = @_;
 
   my $maf_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
@@ -132,6 +176,13 @@ sub import_vcf_file {
     croak("Can't extract tumour/normal sample identifiers from: $path");
   }
 
+  my $patient = $tumour;
+  if ($patient =~ s{$cfg->{mapping}->{sample_pattern}}{$cfg->{mapping}->{patient_pattern}}ee) {
+    ## Good to go
+  } else {
+    croak("Can't match sample pattern: " . $cfg->{mapping}->{sample_pattern});
+  }
+
   ## Make a temporary file place, but we need to track this, because we
   ## are going to need this file...
 
@@ -143,6 +194,8 @@ sub import_vcf_file {
   my $command = {
     script => $cfg->{vcf2maf},
     output => $temp_filename,
+    patient => $patient,
+    sample => $tumour,
     type => $type,
     arguments => [
       '--input-vcf', $path,
@@ -157,10 +210,6 @@ sub import_vcf_file {
       '--output-maf', $temp_filename,
     ]
   }
-}
-
-sub write_extended_mutations_data {
-
 }
 
 sub write_meta_file {

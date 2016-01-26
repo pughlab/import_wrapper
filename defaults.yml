@@ -19,3 +19,14 @@ mutations:
   show_profile_in_analysis_tab: true
   profile_name: 'Mutations'
   profile_description: 'Mutations'
+
+clinical:
+  genetic_alteration_type: 'CLINICAL'
+  datatype: ';:FREE-FORM'
+  show_profile_in_analysis_tab: true
+  profile_name: 'Clinical data'
+  profile_description: 'Clinical data'
+
+mapping:
+  sample_pattern: 'GENIE-UHN-(\d+)-\w+'
+  patient_pattern: 'GENIE-UHN-$1'
