@@ -271,6 +271,7 @@ push( @maf_header, @ann_cols );
 # Parse through each variant in the annotated VCF, pull out ANN/CSQ from the INFO column, and choose
 # one transcript per variant whose annotation will be used in the MAF
 my $maf_fh = *STDOUT; # Use STDOUT if an output MAF file was not defined
+warn "WRITING: $output_maf\n";
 $maf_fh = IO::File->new( $output_maf, ">" ) or die "ERROR: Couldn't open output file: $output_maf!\n" if( $output_maf );
 $maf_fh->print( "#version 2.4\n" . join( "\t", @maf_header ), "\n" ); # Print MAF header
 ( -s $output_vcf ) or exit; # Warnings on this were printed earlier, but quit here, only after a blank MAF is created
