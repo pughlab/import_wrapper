@@ -60,6 +60,7 @@ sub build_import {
   }
 
   # Now we can merge the commands into a new and final MAF file
+  $cfg->{LOGGER}->info("Merging MAF files into: $mutations_data_file");
   my @mafs = map { $_->{output} } (@mutect_commands, @varscan_commands);
   merge_mafs($cfg, $mutations_data_file, @mafs);
 
@@ -111,6 +112,7 @@ sub merge_mafs {
   $maf_fh->print($header1 . $header2); # Print MAF header
 
   foreach my $maf (@mafs) {
+    $cfg->{LOGGER}->info("Reading generated MAF: $maf");
     my $input_fh = IO::File->new($output, "<") or croak "ERROR: Couldn't open input file: $maf!\n";
     while(<$input_fh>) {
       next if $_ eq $header1;
