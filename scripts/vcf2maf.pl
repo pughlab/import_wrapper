@@ -185,6 +185,7 @@ GetOptions(
     'vep-path=s' => \$vep_path,
     'vep-data=s' => \$vep_data,
     'vep-forks=s' => \$vep_forks,
+    'vep-dir-plugins=s' => \$vep_dir_plugins,
     'ref-fasta=s' => \$ref_fasta,
     'species=s' => \$species,
     'ncbi-build=s' => \$ncbi_build,
@@ -225,10 +226,12 @@ if( $input_vcf ) {
         # Contruct VEP command using some default options and run it
         my $vep_cmd = "$perl_bin $vep_path/variant_effect_predictor.pl --species $species --assembly $ncbi_build --offline --merged --no_progress --no_stats --sift b --ccds --uniprot --hgvs --symbol --numbers --domains --gene_phenotype --regulatory --canonical --protein --biotype --uniprot --tsl --pubmed --variant_class --shift_hgvs 1 --check_existing --check_alleles --check_ref --total_length --allele_number --no_escape --xref_refseq --failed 1 --vcf --minimal --flag_pick_allele --pick_order canonical,tsl,biotype,rank,ccds,length --dir $vep_data --fasta $ref_fasta --input_file $input_vcf --output_file $output_vcf";
         $vep_cmd .= " --fork $vep_forks" if( $vep_forks > 1 ); # VEP barks if it's set to 1
+        $vep_cmd .= " --dir_plugins $vep_dir_plugins" if ($vep_dir_plugins);
         # Add options that only work on human variants
         $vep_cmd .= " --polyphen b --gmaf --maf_1kg --maf_esp" if( $species eq "homo_sapiens" );
         # Add options that only work on human variants mapped to the GRCh37 reference genome
-        $vep_cmd .= " --plugin ExAC,$vep_data/ExAC.r0.3.sites.minus_somatic.vcf.gz" if( $species eq "homo_sapiens" and $ncbi_build eq "GRCh37" );
+        # And when we have a supplied $vep_dir_plugins
+        $vep_cmd .= " --plugin ExAC,$vep_dir_plugins/ExAC.r0.3.sites.minus_somatic.vcf.gz" if ($vep_dir_plugins && $species eq "homo_sapiens" and $ncbi_build eq "GRCh37");
 
         # Make sure it ran without error codes
         system( $vep_cmd ) == 0 or die "\nERROR: Failed to run the VEP annotator!\nCommand: $vep_cmd\n";

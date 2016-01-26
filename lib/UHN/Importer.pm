@@ -107,7 +107,8 @@ sub import_vcf_file {
   ## Make a temporary file place, but we need to track this, because we
   ## are going to need this file...
 
-  my ($temp_fh, $temp_filename) = tempfile( "${type}_XXXXXX", SUFFIX => '.maf', DIR => $cfg->{TEMP_DIRECTORY});
+  my $directory = "$cfg->{TEMP_DIRECTORY}";
+  my ($temp_fh, $temp_filename) = tempfile( "${type}_XXXXXX", SUFFIX => '.maf', DIR => $directory);
   $temp_fh->close();
 
   my $command = {
