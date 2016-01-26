@@ -208,7 +208,6 @@ if( $custom_enst_file ) {
 }
 
 # Annotate variants in given VCF to all possible transcripts
-my $output_vcf;
 ## Fixed to not assume we can write to the input directory
 my ($temp_fh, $output_vcf) = tempfile( "vep_output_XXXXXX", SUFFIX => '.vep.vcf', TMPDIR => 1);
 $temp_fh->close();
