@@ -56,7 +56,7 @@ sub build_import {
       $cfg->{LOGGER}->error("Command failed: $?");
       croak($?);
     };
-    last if ($count == 5);
+    last if ($count++ == 5);
   }
 
   # Now we can merge the commands into a new and final MAF file
