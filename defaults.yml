@@ -29,4 +29,4 @@ clinical:
 
 mapping:
   sample_pattern: 'GENIE-UHN-(\d+)-\w+'
-  patient_pattern: 'GENIE-UHN-$1'
+  patient_pattern: '"GENIE-UHN-".$1'
