@@ -170,6 +170,10 @@ sub write_extended_mutations_data {
 sub import_vcf_file {
   my ($cfg, $type, $base, $path) = @_;
 
+  $cfg->{_vcf_count} //= 0;
+  $cfg->{_vcf_count}++;
+  $cfg->{LOGGER}->info("Processing file $cfg->{_vcf_count}: $path");
+
   my ($tumour, $normal) = UHN::Samples::get_sample_identifiers($path);
   if (! $tumour || ! $normal) {
     $cfg->{LOGGER}->error("Can't extract tumour/normal sample identifiers from: $path");
