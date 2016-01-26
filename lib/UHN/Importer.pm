@@ -53,6 +53,7 @@ sub build_import {
 
   foreach my $command (@commands) {
     my @args = ($command->{script}, @{$command->{arguments}});
+    $cfg->{LOGGER}->info("Processing file $command->{index}: $command->{description}");
     $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
     system(@args) == 0 or do {
       $cfg->{LOGGER}->error("Command failed: $?");
@@ -171,8 +172,6 @@ sub import_vcf_file {
   my ($cfg, $type, $base, $path) = @_;
 
   $cfg->{_vcf_count} //= 0;
-  $cfg->{_vcf_count}++;
-  $cfg->{LOGGER}->info("Processing file $cfg->{_vcf_count}: $path");
 
   my ($tumour, $normal) = UHN::Samples::get_sample_identifiers($path);
   if (! $tumour || ! $normal) {
@@ -201,6 +200,8 @@ sub import_vcf_file {
     patient => $patient,
     sample => $tumour,
     type => $type,
+    index => $cfg->{_vcf_count}++,
+    description => "vcf2maf $path",
     arguments => [
       '--input-vcf', $path,
       '--tumor-id', $tumour,
