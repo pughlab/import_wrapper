@@ -39,19 +39,29 @@ push( @maf_header, @ann_cols );
 sub build_import {
   my ($cfg) = @_;
 
+  my $study_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_study.txt");
+  my $mutations_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_mutations_extended.txt");
+  my $mutations_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_mutations_extended.txt");
+
   my $mutect_directory = $cfg->{mutect_directory} // croak("Missing mutect_directory configuration");
   my $varscan_directory = $cfg->{varscan_directory} // croak("Missing varscan_directory configuration");
   my @mutect_commands = UHN::BuildCommands::scan_paths($cfg, \&import_mutect_file, $mutect_directory);
   my @varscan_commands = UHN::BuildCommands::scan_paths($cfg, \&import_varscan_file, $varscan_directory);
 
+  my $count = 0;
   foreach my $command (@mutect_commands, @varscan_commands) {
     my @args = ($command->{script}, @{$command->{arguments}});
     $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
     system(@args) == 0 or do {
       $cfg->{LOGGER}->error("Command failed: $?");
       croak($?);
-    }
+    };
+    last if ($count == 5);
   }
+
+  # Now we can merge the commands into a new and final MAF file
+  my @mafs = map { $_->{output} } (@mutect_commands, @varscan_commands);
+  merge_mafs($cfg, $mutations_data_file, @mafs);
 
   my %core_meta = ();
   $core_meta{cancer_study_identifier} =              $cfg->{cancer_study}->{identifier};
@@ -76,10 +86,6 @@ sub build_import {
   ## Now we can do the unbelievable task of building a new file which contains the
   ## MAF output of every single of these, merged.
 
-  my $study_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_study.txt");
-  my $mutations_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_mutations_extended.txt");
-  my $mutations_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_mutations_extended.txt");
-
   write_meta_file($study_meta_file, \%study_meta);
   write_meta_file($mutations_meta_file, \%mutations_meta);
   write_extended_mutations_data($mutations_data_file, @mutect_commands, @varscan_commands);
@@ -93,6 +99,28 @@ sub import_mutect_file {
 sub import_varscan_file {
   my ($cfg,  $base, $path) = @_;
   import_vcf_file($cfg, 'varscan', $base, $path);
+}
+
+sub merge_mafs {
+  my ($cfg, $output, @mafs) = @_;
+
+  my $maf_fh = IO::File->new($output, ">") or die "ERROR: Couldn't open output file: $output!\n";
+
+  my $header1 = "#version 2.4\n";
+  my $header2 = join("\t", @maf_header) . "\n";
+  $maf_fh->print($header1 . $header2); # Print MAF header
+
+  foreach my $maf (@mafs) {
+    my $input_fh = IO::File->new($output, "<") or croak "ERROR: Couldn't open input file: $maf!\n";
+    while(<$input_fh>) {
+      next if $_ eq $header1;
+      next if $_ eq $header2;
+      carp("Suspicious header: $_") if /^Hugo_Symbol/i;
+      $maf_fh->print($_);
+    }
+    $input_fh->close();
+  }
+  $maf_fh->close();
 }
 
 sub import_vcf_file {
