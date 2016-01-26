@@ -52,7 +52,7 @@ my @hashes = map {
 $cfg = Hash::Merge::Simple->merge(@hashes);
 $cfg->{PERL_EXECUTABLE} = $^X;
 $cfg->{LOGGER} = $logger;
-$cfg->{TEMP_DIRECTORY} = File::Temp->newdir();
+$cfg->{TEMP_DIRECTORY} = File::Spec->tmpdir();
 
 $output = File::Spec->rel2abs($output);
 if (! -d $output) {
