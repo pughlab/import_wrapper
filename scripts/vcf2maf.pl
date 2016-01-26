@@ -170,7 +170,7 @@ unless( @ARGV and $ARGV[0] =~ m/^-/ ) {
 }
 
 # Parse options and print usage if there is a syntax error, or if usage was explicitly requested
-my ( $man, $help ) = ( 0, 0 );
+my ( $man, $help, $vep_check_ref ) = ( 0, 0, 1 );
 my ( $input_vcf, $output_maf, $custom_enst_file );
 my ( $vcf_tumor_id, $vcf_normal_id );
 GetOptions(
@@ -187,6 +187,7 @@ GetOptions(
     'vep-data=s' => \$vep_data,
     'vep-forks=s' => \$vep_forks,
     'vep-dir-plugins=s' => \$vep_dir_plugins,
+    'vep-check-ref!' => \$vep_check_ref,
     'ref-fasta=s' => \$ref_fasta,
     'species=s' => \$species,
     'ncbi-build=s' => \$ncbi_build,
@@ -225,9 +226,10 @@ if( $input_vcf ) {
         ( -s $ref_fasta ) or die "ERROR: Reference FASTA not found: $ref_fasta\n";
 
         # Contruct VEP command using some default options and run it
-        my $vep_cmd = "$perl_bin $vep_path/variant_effect_predictor.pl --species $species --assembly $ncbi_build --offline --merged --no_progress --no_stats --sift b --ccds --uniprot --hgvs --symbol --numbers --domains --gene_phenotype --regulatory --canonical --protein --biotype --uniprot --tsl --pubmed --variant_class --shift_hgvs 1 --check_existing --check_alleles --check_ref --total_length --allele_number --no_escape --xref_refseq --failed 1 --vcf --minimal --flag_pick_allele --pick_order canonical,tsl,biotype,rank,ccds,length --dir $vep_data --fasta $ref_fasta --input_file $input_vcf --output_file $output_vcf";
+        my $vep_cmd = "$perl_bin $vep_path/variant_effect_predictor.pl --species $species --assembly $ncbi_build --offline --merged --no_progress --no_stats --sift b --ccds --uniprot --hgvs --symbol --numbers --domains --gene_phenotype --regulatory --canonical --protein --biotype --uniprot --tsl --pubmed --variant_class --shift_hgvs 1 --check_existing --check_alleles --total_length --allele_number --no_escape --xref_refseq --failed 1 --vcf --minimal --flag_pick_allele --pick_order canonical,tsl,biotype,rank,ccds,length --dir $vep_data --fasta $ref_fasta --input_file $input_vcf --output_file $output_vcf";
         $vep_cmd .= " --fork $vep_forks" if( $vep_forks > 1 ); # VEP barks if it's set to 1
         $vep_cmd .= " --dir_plugins $vep_dir_plugins" if ($vep_dir_plugins);
+        $vep_cmd .= " --check_ref" if ($vep_check_ref);
         # Add options that only work on human variants
         $vep_cmd .= " --polyphen b --gmaf --maf_1kg --maf_esp" if( $species eq "homo_sapiens" );
         # Add options that only work on human variants mapped to the GRCh37 reference genome

@@ -220,7 +220,11 @@ sub import_vcf_file {
       '--ref-fasta', $cfg->{ref_fasta},
       '--output-maf', $temp_filename,
     ]
-  }
+  };
+
+  push @{$command->{arguments}}, '--no-vep-check-ref' if ($cfg->{no_vep_check_ref});
+
+  return $command;
 }
 
 sub write_meta_file {
