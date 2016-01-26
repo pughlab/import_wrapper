@@ -234,6 +234,8 @@ if( $input_vcf ) {
         # And when we have a supplied $vep_dir_plugins
         $vep_cmd .= " --plugin ExAC,$vep_dir_plugins/ExAC.r0.3.sites.minus_somatic.vcf.gz" if ($vep_dir_plugins && $species eq "homo_sapiens" and $ncbi_build eq "GRCh37");
 
+        warn "COMMAND: $vep_cmd\n";
+
         # Make sure it ran without error codes
         system( $vep_cmd ) == 0 or die "\nERROR: Failed to run the VEP annotator!\nCommand: $vep_cmd\n";
         ( -s $output_vcf ) or warn "WARNING: VEP-annotated VCF file is missing or empty!\nPath: $output_vcf\n";

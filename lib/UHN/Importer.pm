@@ -110,6 +110,7 @@ sub import_vcf_file {
   my $directory = "$cfg->{TEMP_DIRECTORY}";
   my ($temp_fh, $temp_filename) = tempfile( "${type}_XXXXXX", SUFFIX => '.maf', DIR => $directory);
   $temp_fh->close();
+  unlink($temp_filename);
 
   my $command = {
     script => $cfg->{vcf2maf},
