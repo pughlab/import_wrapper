@@ -171,7 +171,7 @@ sub write_extended_mutations_data {
 sub import_vcf_file {
   my ($cfg, $type, $base, $path) = @_;
 
-  $cfg->{_vcf_count} //= 0;
+  $cfg->{_vcf_count} //= 1;
 
   my ($tumour, $normal) = UHN::Samples::get_sample_identifiers($path);
   if (! $tumour || ! $normal) {
