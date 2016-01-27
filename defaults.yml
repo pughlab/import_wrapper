@@ -34,7 +34,7 @@ clinical:
 
 mapping:
   sample_pattern: 'GENIE-UHN-(\d+)-\w+'
-  patient_pattern: '"GENIE-UHN-".$1'
+  patient_pattern: '"GENIE-UHN-".("0"x(6 - length($1))).$1'
 
 case_lists:
   all:
