@@ -123,7 +123,8 @@ sub read_clinical_data {
   my ($cfg, $cases) = @_;
 
   my $clinical_data = $cfg->{clinical_file} // croak("Missing clinical_file configuration");
-  my $csv = Text::CSV->new({binary => 1, sep_char => '\t'}) or die "Cannot use CSV: ".Text::CSV->error_diag();
+  my $csv = Text::CSV->new({binary => 1}) or die "Cannot use CSV: ".Text::CSV->error_diag();
+  $csv->sep_char("\t");
   open my $fh, "<:encoding(utf8)", $clinical_data or die "$clinical_data: $!";
   my $headers = $csv->getline($fh);
   while (my $row = $csv->getline($fh)) {
