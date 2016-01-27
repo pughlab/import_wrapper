@@ -95,7 +95,7 @@ sub build_import {
   ## Get all patient identifiers sequenced
   my $patients = {};
   foreach my $command (@$commands) {
-    $patients->{$command->{patient}} = 1;
+    $patients->{$command->{sample}} = 1;
   }
   $patients = join("\t", sort keys %$patients);
   my %case_list_all = ();
