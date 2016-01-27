@@ -46,6 +46,7 @@ sub build_import {
   my $clinical_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_clinical.txt");
   my $mutations_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_mutations_extended.txt");
   my $clinical_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_clinical.txt");
+  my $case_list_all_file = File::Spec->catfile($cfg->{OUTPUT}, "case_lists/cases_all.txt");
 
   my $mutect_directory = $cfg->{mutect_directory} // croak("Missing mutect_directory configuration");
   my $varscan_directory = $cfg->{varscan_directory} // croak("Missing varscan_directory configuration");
@@ -102,12 +103,28 @@ sub build_import {
   $clinical_meta{profile_description} =              $cfg->{clinical}->{profile_description};
   $clinical_meta{profile_name} =                     $cfg->{clinical}->{profile_name};
 
+  ## Get all patient identifiers sequenced
+  my $patients = {};
+  foreach my $command (@commands) {
+    $patients->{$command->{patient}} = 1;
+  }
+  $patients = join("\t", sort keys %$patients);
+  my %case_list_all = ();
+  $case_list_all{cancer_study_identifier} =          $core_meta{cancer_study_identifier};
+  $case_list_all{stable_id} =                        $case_list_all{cancer_study_identifier} . "_all";
+  $case_list_all{case_list_name} =                   $cfg->{case_lists}->{all}->{name};
+  $case_list_all{case_list_description} =            $cfg->{case_lists}->{all}->{description};
+  $case_list_all{case_list_ids} =                    $patients;
+
   ## Now we can do the unbelievable task of building a new file which contains the
   ## MAF output of every single of these, merged.
 
   write_meta_file($study_meta_file, \%study_meta);
   write_meta_file($mutations_meta_file, \%mutations_meta);
   write_meta_file($clinical_meta_file, \%clinical_meta);
+
+  ## Case lists are essentially the same syntactically
+  write_meta_file($case_list_all_file, \%case_list_all);
 }
 
 sub import_mutect_file {

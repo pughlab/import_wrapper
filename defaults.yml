@@ -33,3 +33,8 @@ clinical:
 mapping:
   sample_pattern: 'GENIE-UHN-(\d+)-\w+'
   patient_pattern: '"GENIE-UHN-".$1'
+
+case_lists:
+  all:
+    name: 'All Tumors'
+    description: 'All tumor samples'

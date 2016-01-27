@@ -58,6 +58,10 @@ $output = File::Spec->rel2abs($output);
 if (! -d $output) {
   make_path($output);
 }
+if (! -d "$output/case_lists") {
+  make_path("$output/case_lists");
+}
+
 $cfg->{OUTPUT} = $output;
 
 UHN::Importer::build_import($cfg);
