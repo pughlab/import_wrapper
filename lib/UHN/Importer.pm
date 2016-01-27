@@ -184,7 +184,6 @@ sub write_clinical_data {
     {name => 'SAMPLE_ID', description => 'Sample Identifier', type => 'STRING', label => 'SAMPLE', header => 'SAMPLE_ID', count => 1},
     {name => 'OS_MONTHS', description => 'Overall Survival', type => 'NUMBER', label => 'PATIENT', header => 'OS_MONTHS', count => 1},
     {name => 'OS_STATUS', description => 'Overall Status', type => 'STRING', label => 'PATIENT', header => 'OS_STATUS', count => 1},
-    {name => 'CANCER_TYPE', description => 'Cancer Type', type => 'STRING', label => 'PATIENT', header => 'CANCER_TYPE', count => 1},
     {name => 'AGE_DIAGNOSIS', description => 'Age at Diagnosis', type => 'NUMBER', label => 'PATIENT', header => 'AGE_DIAGNOSIS', count => 1},
     {name => 'AGE_BIOPSY', description => 'Age at Biopsy', type => 'NUMBER', label => 'PATIENT', header => 'AGE_BIOPSY', count => 1},
     {name => 'SEX', description => 'Sex', type => 'STRING', label => 'PATIENT', header => 'SEX', count => 1},
@@ -214,10 +213,10 @@ sub write_clinical_data {
     my ($sample, $patient) = split("\t", $pair);
     my $case = $cases->{$patient} // carp("Can't find patient case data: $patient");
     my %record = ();
-    @record{@header_names} = map { defined($case)? $case->{$_} : ""; } @header_names;
+    @record{@header_names} = map { defined($case) ? $case->{$_} : ""; } @header_names;
     $record{PATIENT_ID} = $patient;
     $record{SAMPLE_ID} = $sample;
-    my @values = map map { $record{$_}; } @header_names;
+    my @values = map { $record{$_}; } @header_names;
     $output_fh->print(join("\t", @values) . "\n");
   }
 }
