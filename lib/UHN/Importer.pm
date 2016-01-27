@@ -203,13 +203,20 @@ sub write_clinical_data {
   my @header_names = map { $_->{header} } @headers;
   $output_fh->print(join("\t", @header_names). "\n");
 
+  my %pairs = {};
   foreach my $command (@$commands) {
+    my $sample = $command->{sample};
     my $patient = $command->{patient};
+    $pairs{"$sample\t$patient"} = 1;
+  }
+
+  foreach my $pair (sort keys %pairs) {
+    my ($sample, $patient) = split("\t", $pair);
     my $case = $cases->{$patient} // croak("Can't find patient case data: $patient");
     my %record = ();
     @record{@header_names} = map { $case->{$_}; } @header_names;
-    $record{PATIENT_ID} = $command->{patient};
-    $record{SAMPLE_ID} = $command->{sample};
+    $record{PATIENT_ID} = $patient;
+    $record{SAMPLE_ID} = $sample;
     my @values = map map { $record{$_}; } @header_names;
     $output_fh->print(join("\t", @values) . "\n");
   }
@@ -271,7 +278,7 @@ sub import_vcf_file {
     sample => $tumour,
     type => $type,
     index => $cfg->{_vcf_count}++,
-    description => "vcf2maf $path",
+    description => "vcf2maf for $patient $tumour $path",
     arguments => [
       '--input-vcf', $path,
       '--tumor-id', $tumour,
