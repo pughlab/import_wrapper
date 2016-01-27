@@ -41,6 +41,8 @@ push( @maf_header, @ann_cols );
 sub build_import {
   my ($cfg) = @_;
 
+  my $overwrite = $cfg->{overwrite};
+
   my $study_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_study.txt");
   my $mutations_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_mutations_extended.txt");
   my $clinical_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_clinical.txt");
@@ -48,32 +50,19 @@ sub build_import {
   my $clinical_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_clinical.txt");
   my $case_list_all_file = File::Spec->catfile($cfg->{OUTPUT}, "case_lists/cases_all.txt");
 
-  my $mutect_directory = $cfg->{mutect_directory} // croak("Missing mutect_directory configuration");
-  my $varscan_directory = $cfg->{varscan_directory} // croak("Missing varscan_directory configuration");
-  my @mutect_commands = UHN::BuildCommands::scan_paths($cfg, \&import_mutect_file, $mutect_directory);
-  my @varscan_commands = UHN::BuildCommands::scan_paths($cfg, \&import_varscan_file, $varscan_directory);
-  my @commands = (@mutect_commands, @varscan_commands);
+  my $commands = [];
+  build_commands($cfg, $commands);
 
-  my $pm = new Parallel::ForkManager($cfg->{max_processes});
-  foreach my $command (@commands) {
-    my @args = ($command->{script}, @{$command->{arguments}});
-    $cfg->{LOGGER}->info("Processing file $command->{index}: $command->{description}");
-    $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
-
-    my $pid = $pm->start and next;
-    system(@args) == 0 or do {
-      $cfg->{LOGGER}->error("Command failed: $?");
-      croak($?);
-    };
-    $pm->finish;
+  if ($overwrite || ! -e $clinical_data_file) {
+    write_clinical_data($cfg, $clinical_data_file, $commands);
   }
 
-  write_clinical_data($cfg, $clinical_data_file, @commands);
-
-  # Now we can merge the commands into a new and final MAF file
-  $cfg->{LOGGER}->info("Merging MAF files into: $mutations_data_file");
-  my @mafs = map { $_->{output} } (@commands);
-  write_extended_mutations_data($cfg, $mutations_data_file, @mafs);
+  if ($overwrite || ! -e $mutations_data_file) {
+    execute_commands($cfg, $commands);
+    $cfg->{LOGGER}->info("Merging MAF files into: $mutations_data_file");
+    my @mafs = map { $_->{output} } (@$commands);
+    write_extended_mutations_data($cfg, $mutations_data_file, @mafs);
+  }
 
   my %core_meta = ();
   $core_meta{cancer_study_identifier} =              $cfg->{cancer_study}->{identifier};
@@ -105,7 +94,7 @@ sub build_import {
 
   ## Get all patient identifiers sequenced
   my $patients = {};
-  foreach my $command (@commands) {
+  foreach my $command (@$commands) {
     $patients->{$command->{patient}} = 1;
   }
   $patients = join("\t", sort keys %$patients);
@@ -119,12 +108,44 @@ sub build_import {
   ## Now we can do the unbelievable task of building a new file which contains the
   ## MAF output of every single of these, merged.
 
-  write_meta_file($study_meta_file, \%study_meta);
-  write_meta_file($mutations_meta_file, \%mutations_meta);
-  write_meta_file($clinical_meta_file, \%clinical_meta);
+  write_meta_file($study_meta_file, \%study_meta) if ($overwrite || ! -e $study_meta_file);
+  write_meta_file($mutations_meta_file, \%mutations_meta) if ($overwrite || ! -e $mutations_meta_file);
+  write_meta_file($clinical_meta_file, \%clinical_meta) if ($overwrite || ! -e $clinical_meta_file);
 
   ## Case lists are essentially the same syntactically
-  write_meta_file($case_list_all_file, \%case_list_all);
+  write_meta_file($case_list_all_file, \%case_list_all) if ($overwrite || ! -e $case_list_all_file);
+}
+
+sub build_commands {
+  my ($cfg, $commands) = @_;
+
+  my $mutect_directory = $cfg->{mutect_directory} // croak("Missing mutect_directory configuration");
+  my $varscan_directory = $cfg->{varscan_directory} // croak("Missing varscan_directory configuration");
+  my @mutect_commands = UHN::BuildCommands::scan_paths($cfg, \&import_mutect_file, $mutect_directory);
+  my @varscan_commands = UHN::BuildCommands::scan_paths($cfg, \&import_varscan_file, $varscan_directory);
+  my @commands = (@mutect_commands, @varscan_commands);
+
+  $#$commands = -1;
+  push @$commands, (@mutect_commands, @varscan_commands);
+  return $commands;
+}
+
+sub execute_commands {
+  my ($cfg, $commands) = @_;
+
+  my $pm = new Parallel::ForkManager($cfg->{max_processes});
+  foreach my $command (@$commands) {
+    my @args = ($command->{script}, @{$command->{arguments}});
+    $cfg->{LOGGER}->info("Processing file $command->{index}: $command->{description}");
+    $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
+
+    my $pid = $pm->start and next;
+    system(@args) == 0 or do {
+      $cfg->{LOGGER}->error("Command failed: $?");
+      croak($?);
+    };
+    $pm->finish;
+  }
 }
 
 sub import_mutect_file {
@@ -138,7 +159,7 @@ sub import_varscan_file {
 }
 
 sub write_clinical_data {
-  my ($cfg, $output, @commands) = @_;
+  my ($cfg, $output, $commands) = @_;
 
   my @headers = (
     {name => 'Patient Identifier',
@@ -163,7 +184,7 @@ sub write_clinical_data {
   $output_fh->print("#" . join("\t", map { $_->{count} } @headers) . "\n");
   $output_fh->print(join("\t", map { $_->{header} } @headers) . "\n");
 
-  foreach my $command (@commands) {
+  foreach my $command (@$commands) {
     $output_fh->print(join("\t", $command->{patient}, $command->{sample}) . "\n");
   }
 }

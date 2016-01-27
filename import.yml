@@ -14,3 +14,6 @@ cancer_study:
   groups: ''
   dedicated_color: 'Black'
   short_name: 'IMPACT/COMPACT'
+
+mutations:
+  genetic_alteration_type: 'MUTATION_EXTENDED'
