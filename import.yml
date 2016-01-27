@@ -4,7 +4,7 @@ mutect_directory: '/mnt/work1/users/suzannegroup/TSACP/MUTECT_deidentified'
 
 varscan_directory: '/mnt/work1/users/suzannegroup/TSACP/VARSCAN2_deidentified'
 
-clinical_file: ''
+clinical_file: '/mnt/work1/users/home2/stuartw/impact_clinical.tsv'
 
 cancer_study:
   identifier: 'impact_compact'

@@ -51,10 +51,12 @@ sub build_import {
   my $case_list_all_file = File::Spec->catfile($cfg->{OUTPUT}, "case_lists/cases_all.txt");
 
   my $commands = [];
+  my $cases = {};
   build_commands($cfg, $commands);
+  read_clinical_data($cfg, $cases);
 
   if ($overwrite || ! -e $clinical_data_file) {
-    write_clinical_data($cfg, $clinical_data_file, $commands);
+    write_clinical_data($cfg, $clinical_data_file, $commands, $cases);
   }
 
   if ($overwrite || ! -e $mutations_data_file) {
@@ -116,6 +118,20 @@ sub build_import {
   write_meta_file($case_list_all_file, \%case_list_all) if ($overwrite || ! -e $case_list_all_file);
 }
 
+sub read_clinical_data {
+  my ($cfg, $cases) = @_;
+
+  my $clinical_data = $cfg->{clinical_file} // croak("Missing clinical_file configuration");
+  my $csv = Text::CSV->new({binary => 1, sep_char => '\t'}) or die "Cannot use CSV: ".Text::CSV->error_diag();
+  open my $fh, "<:encoding(utf8)", $clinical_data or die "$clinical_data: $!";
+  my $headers = $csv->getline($fh);
+  while (my $row = $csv->getline($fh)) {
+    my %record = ();
+    @record{@$headers} = @$row;
+    $cases->{$record{PATIENT_ID}} = \%record;
+  }
+}
+
 sub build_commands {
   my ($cfg, $commands) = @_;
 
@@ -159,21 +175,20 @@ sub import_varscan_file {
 }
 
 sub write_clinical_data {
-  my ($cfg, $output, $commands) = @_;
+  my ($cfg, $output, $commands, $cases) = @_;
 
   my @headers = (
-    {name => 'Patient Identifier',
-     description => 'Patient Identifier',
-     type => 'STRING',
-     label => 'PATIENT',
-     header => 'PATIENT_ID',
-     count => 1},
-    {name => 'Sample Identifier',
-     description => 'Sample Identifier',
-     type => 'STRING',
-     label => 'SAMPLE',
-     header => 'SAMPLE_ID',
-     count => 1}
+    {name => 'PATIENT_ID', description => 'Patient Identifier', type => 'STRING', label => 'PATIENT', header => 'PATIENT_ID', count => 1},
+    {name => 'SAMPLE_ID', description => 'Sample Identifier', type => 'STRING', label => 'SAMPLE', header => 'SAMPLE_ID', count => 1},
+    {name => 'OS_MONTHS', description => 'Overall Survival', type => 'NUMBER', label => 'PATIENT', header => 'OS_MONTHS', count => 1},
+    {name => 'OS_STATUS', description => 'Overall Status', type => 'STRING', label => 'PATIENT', header => 'OS_STATUS', count => 1},
+    {name => 'CANCER_TYPE', description => 'Cancer Type', type => 'STRING', label => 'PATIENT', header => 'CANCER_TYPE', count => 1},
+    {name => 'AGE_DIAGNOSIS', description => 'Age at Diagnosis', type => 'NUMBER', label => 'PATIENT', header => 'AGE_DIAGNOSIS', count => 1},
+    {name => 'AGE_BIOPSY', description => 'Age at Biopsy', type => 'NUMBER', label => 'PATIENT', header => 'AGE_BIOPSY', count => 1},
+    {name => 'SEX', description => 'Sex', type => 'STRING', label => 'PATIENT', header => 'SEX', count => 1},
+    {name => 'YEAR_DIAGNOSIS', description => 'Year of Diagnosis', type => 'STRING', label => 'PATIENT', header => 'YEAR_DIAGNOSIS', count => 1},
+    {name => 'PRIMARY_SITE', description => 'Cancer Type', type => 'STRING', label => 'PATIENT', header => 'PRIMARY_SITE', count => 1},
+    {name => 'ONCOTREE_CODE', description => 'Cancer Type', type => 'STRING', label => 'PATIENT', header => 'ONCOTREE_CODE', count => 1},
   );
 
   my $output_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
@@ -182,10 +197,19 @@ sub write_clinical_data {
   $output_fh->print("#" . join("\t", map { $_->{type} } @headers) . "\n");
   $output_fh->print("#" . join("\t", map { $_->{label} } @headers) . "\n");
   $output_fh->print("#" . join("\t", map { $_->{count} } @headers) . "\n");
-  $output_fh->print(join("\t", map { $_->{header} } @headers) . "\n");
+
+  my @header_names = map { $_->{header} } @headers;
+  $output_fh->print(join("\t", @header_names). "\n");
 
   foreach my $command (@$commands) {
-    $output_fh->print(join("\t", $command->{patient}, $command->{sample}) . "\n");
+    my $patient = $command->{patient};
+    my $case = $cases->{$patient} // croak("Can't find patient case data: $patient");
+    my %record = ();
+    @record{@header_names} = map { $case->{$_}; } @header_names;
+    $record{PATIENT_ID} = $command->{patient};
+    $record{SAMPLE_ID} = $command->{sample};
+    my @values = map map { $record{$_}; } @header_names;
+    $output_fh->print(join("\t", @values) . "\n");
   }
 }
 
