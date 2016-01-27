@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Carp;
+use Text::CSV;
 
 use File::Temp qw/ tempfile tempdir /;
 
