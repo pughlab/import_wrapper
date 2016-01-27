@@ -211,7 +211,7 @@ sub write_clinical_data {
 
   foreach my $pair (sort keys %pairs) {
     my ($sample, $patient) = split("\t", $pair);
-    my $case = $cases->{$patient} // carp("Can't find patient case data: $patient");
+    my $case = $cases->{$patient} // do { carp("Can't find patient case data: $patient"); undef; };
     my %record = ();
     @record{@header_names} = map { defined($case) ? $case->{$_} : ""; } @header_names;
     $record{PATIENT_ID} = $patient;
