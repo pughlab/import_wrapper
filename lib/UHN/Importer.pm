@@ -203,7 +203,7 @@ sub write_clinical_data {
   my @header_names = map { $_->{header} } @headers;
   $output_fh->print(join("\t", @header_names). "\n");
 
-  my %pairs = {};
+  my %pairs = ();
   foreach my $command (@$commands) {
     my $sample = $command->{sample};
     my $patient = $command->{patient};
