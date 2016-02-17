@@ -283,7 +283,7 @@ sub import_vcf_file {
   if ($patient =~ s{$cfg->{mapping}->{sample_pattern}}{$cfg->{mapping}->{patient_pattern}}ee) {
     ## Good to go
   } else {
-    croak("Can't match sample pattern: " . $cfg->{mapping}->{sample_pattern});
+    croak("Can't match sample pattern: " . $cfg->{mapping}->{sample_pattern} . ", original: " . $patient);
   }
 
   ## Make a temporary file place, but we need to track this, because we

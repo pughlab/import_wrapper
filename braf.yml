@@ -1,12 +1,12 @@
 ---
 
-mutect_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/MutectVCF/output'
+mutect_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/MutectVCF/output/PASS'
 mutect_pattern: '\.vcf$'
 
 varscan_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/Varscan'
 varscan_pattern: '\.vcf$'
 
-clinical_file: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/clinical.txt'
+clinical_file: ''
 
 cancer_study:
   identifier: 'braf'
