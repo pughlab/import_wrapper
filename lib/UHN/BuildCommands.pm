@@ -32,7 +32,7 @@ sub scan_paths {
     my $file = $File::Find::name;
     $cfg->{LOGGER}->info("Scanning $file");
     return if (! -f $file);
-    return if (defined($pattern) && $pattern !~ $file);
+    return if (defined($pattern) && $file !~ $pattern);
     $cfg->{LOGGER}->info("Processing $file");
     my ($name, $path, $suffix) = fileparse($file);
     my $value = &$function($cfg, $name, $file);
