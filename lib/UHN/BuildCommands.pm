@@ -17,7 +17,7 @@ use Carp;
 ## returns a value, we accumulate it into a list result.
 
 sub scan_paths {
-  my ($cfg, $function, @directories) = @_;
+  my ($cfg, $function, $pattern, @directories) = @_;
   @directories = map {
     File::Spec->rel2abs($_);
   } @directories;
@@ -26,6 +26,7 @@ sub scan_paths {
   my $caller = sub {
     my $file = $File::Find::name;
     return if (! -f $file);
+    return if (defined($pattern) && ! $pattern =~ $file);
     my ($name, $path, $suffix) = fileparse($file);
     my $value = &$function($cfg, $name, $file);
     if (defined($value)) {

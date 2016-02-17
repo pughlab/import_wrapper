@@ -139,8 +139,10 @@ sub build_commands {
 
   my $mutect_directory = $cfg->{mutect_directory} // croak("Missing mutect_directory configuration");
   my $varscan_directory = $cfg->{varscan_directory} // croak("Missing varscan_directory configuration");
-  my @mutect_commands = UHN::BuildCommands::scan_paths($cfg, \&import_mutect_file, $mutect_directory);
-  my @varscan_commands = UHN::BuildCommands::scan_paths($cfg, \&import_varscan_file, $varscan_directory);
+  my $mutect_pattern = $cfg->{mutect_pattern};
+  my $varscan_pattern = $cfg->{varscan_pattern};
+  my @mutect_commands = UHN::BuildCommands::scan_paths($cfg, \&import_mutect_file, $mutect_pattern, $mutect_directory);
+  my @varscan_commands = UHN::BuildCommands::scan_paths($cfg, \&import_varscan_file, $varscan_pattern, $varscan_directory);
   my @commands = (@mutect_commands, @varscan_commands);
 
   $#$commands = -1;
