@@ -1,12 +1,12 @@
 ---
 
-mutect_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/MutectVCF/output/PASS'
+mutect_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/MutectVCF/output'
 mutect_pattern: '\.vcf$'
 
 varscan_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/Varscan'
 varscan_pattern: '\.vcf$'
 
-clinical_file: ''
+clinical_file: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/clinical.txt'
 
 cancer_study:
   identifier: 'braf'
@@ -19,3 +19,7 @@ cancer_study:
 
 mutations:
   genetic_alteration_type: 'MUTATION_EXTENDED'
+
+mapping:
+  sample_pattern: '(RAP-\d+)_\d+_T'
+  patient_pattern: '$1'
