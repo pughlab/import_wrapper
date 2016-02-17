@@ -44,9 +44,9 @@ sub get_sample_identifiers {
   }
 
   if ($cfg->{mapping}->{normal_sample} =~ /\d+/) {
-    $result[0] = $values[$cfg->{mapping}->{normal_sample}];
+    $result[1] = $values[$cfg->{mapping}->{normal_sample}];
   } else {
-    $result[0] = (grep { $_ =~ qr/$cfg->{mapping}->{normal_sample}/ } @values)[0];
+    $result[1] = (grep { $_ =~ qr/$cfg->{mapping}->{normal_sample}/ } @values)[0];
   }
 
   return @result;
