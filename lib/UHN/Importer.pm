@@ -273,7 +273,7 @@ sub import_vcf_file {
 
   $cfg->{_vcf_count} //= 1;
 
-  my ($tumour, $normal) = UHN::Samples::get_sample_identifiers($path);
+  my ($tumour, $normal) = UHN::Samples::get_sample_identifiers($cfg, $path);
   if (! $tumour || ! $normal) {
     $cfg->{LOGGER}->error("Can't extract tumour/normal sample identifiers from: $path");
     croak("Can't extract tumour/normal sample identifiers from: $path");
