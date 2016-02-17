@@ -54,7 +54,7 @@ sub build_import {
   my $commands = [];
   my $cases = {};
   build_commands($cfg, $commands);
-  read_clinical_data($cfg, $cases);
+  read_clinical_data($cfg, $cases, $commands);
 
   if ($overwrite || ! -e $clinical_data_file) {
     write_clinical_data($cfg, $clinical_data_file, $commands, $cases);
@@ -119,18 +119,34 @@ sub build_import {
   write_meta_file($case_list_all_file, \%case_list_all) if ($overwrite || ! -e $case_list_all_file);
 }
 
-sub read_clinical_data {
-  my ($cfg, $cases) = @_;
+## If we don't have a clinical file, we should apply some different rules. Use patterns
+## to derive patient identifiers from sample identifiers, and only write minimal clinical
+## information.
 
-  my $clinical_data = $cfg->{clinical_file} // croak("Missing clinical_file configuration");
-  my $csv = Text::CSV->new({binary => 1}) or die "Cannot use CSV: ".Text::CSV->error_diag();
-  $csv->sep_char("\t");
-  open my $fh, "<:encoding(utf8)", $clinical_data or die "$clinical_data: $!";
-  my $headers = $csv->getline($fh);
-  while (my $row = $csv->getline($fh)) {
-    my %record = ();
-    @record{@$headers} = @$row;
-    $cases->{$record{PATIENT_ID}} = \%record;
+sub read_clinical_data {
+  my ($cfg, $cases, $commands) = @_;
+
+  if ($cfg->{clinical_file}) {
+    my $clinical_data = $cfg->{clinical_file};
+    my $csv = Text::CSV->new({binary => 1}) or die "Cannot use CSV: ".Text::CSV->error_diag();
+    $csv->sep_char("\t");
+    open my $fh, "<:encoding(utf8)", $clinical_data or die "$clinical_data: $!";
+    my $headers = $csv->getline($fh);
+    while (my $row = $csv->getline($fh)) {
+      my %record = ();
+      @record{@$headers} = @$row;
+      $cases->{$record{PATIENT_ID}} = \%record;
+    }
+    $cfg->{_clinical_file} = 1;
+  } else {
+    warn("No clinical data file: falling back to identifier mapping");
+    foreach my $command (@$commands) {
+      my $patient = $command->{patient};
+      my $sample = $command->{sample};
+      my %record = (PATIENT_ID => $patient, SAMPLE_ID => $sample);
+      $cases->{$record{PATIENT_ID}} = \%record;
+    }
+    $cfg->{_clinical_file} = 0;
   }
 }
 
@@ -184,15 +200,19 @@ sub write_clinical_data {
   my @headers = (
     {name => 'PATIENT_ID', description => 'Patient Identifier', type => 'STRING', label => 'PATIENT', header => 'PATIENT_ID', count => 1},
     {name => 'SAMPLE_ID', description => 'Sample Identifier', type => 'STRING', label => 'SAMPLE', header => 'SAMPLE_ID', count => 1},
-    {name => 'OS_MONTHS', description => 'Overall Survival', type => 'NUMBER', label => 'PATIENT', header => 'OS_MONTHS', count => 1},
-    {name => 'OS_STATUS', description => 'Overall Status', type => 'STRING', label => 'PATIENT', header => 'OS_STATUS', count => 1},
-    {name => 'AGE_DIAGNOSIS', description => 'Age at Diagnosis', type => 'NUMBER', label => 'PATIENT', header => 'AGE_DIAGNOSIS', count => 1},
-    {name => 'AGE_BIOPSY', description => 'Age at Biopsy', type => 'NUMBER', label => 'PATIENT', header => 'AGE_BIOPSY', count => 1},
-    {name => 'SEX', description => 'Sex', type => 'STRING', label => 'PATIENT', header => 'SEX', count => 1},
-    {name => 'YEAR_DIAGNOSIS', description => 'Year of Diagnosis', type => 'STRING', label => 'PATIENT', header => 'YEAR_DIAGNOSIS', count => 1},
-    {name => 'PRIMARY_SITE', description => 'Cancer Type', type => 'STRING', label => 'PATIENT', header => 'PRIMARY_SITE', count => 1},
-    {name => 'ONCOTREE_CODE', description => 'Cancer Type', type => 'STRING', label => 'PATIENT', header => 'ONCOTREE_CODE', count => 1},
   );
+
+  if ($cfg->{_clinical_file}) {
+    push @headers,
+      {name => 'OS_MONTHS', description => 'Overall Survival', type => 'NUMBER', label => 'PATIENT', header => 'OS_MONTHS', count => 1},
+      {name => 'OS_STATUS', description => 'Overall Status', type => 'STRING', label => 'PATIENT', header => 'OS_STATUS', count => 1},
+      {name => 'AGE_DIAGNOSIS', description => 'Age at Diagnosis', type => 'NUMBER', label => 'PATIENT', header => 'AGE_DIAGNOSIS', count => 1},
+      {name => 'AGE_BIOPSY', description => 'Age at Biopsy', type => 'NUMBER', label => 'PATIENT', header => 'AGE_BIOPSY', count => 1},
+      {name => 'SEX', description => 'Sex', type => 'STRING', label => 'PATIENT', header => 'SEX', count => 1},
+      {name => 'YEAR_DIAGNOSIS', description => 'Year of Diagnosis', type => 'STRING', label => 'PATIENT', header => 'YEAR_DIAGNOSIS', count => 1},
+      {name => 'PRIMARY_SITE', description => 'Cancer Type', type => 'STRING', label => 'PATIENT', header => 'PRIMARY_SITE', count => 1},
+      {name => 'ONCOTREE_CODE', description => 'Cancer Type', type => 'STRING', label => 'PATIENT', header => 'ONCOTREE_CODE', count => 1};
+  };
 
   my $output_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
   $output_fh->print("#" . join("\t", map { $_->{name} } @headers) . "\n");
@@ -218,8 +238,8 @@ sub write_clinical_data {
     @record{@header_names} = map { defined($case) ? $case->{$_} : ""; } @header_names;
     $record{PATIENT_ID} = $patient;
     $record{SAMPLE_ID} = $sample;
-    $record{OS_STATUS} = 'LIVING' if ($record{OS_STATUS} eq 'ALIVE');
-    $record{OS_STATUS} = 'DECEASED' if ($record{OS_STATUS} eq 'DEAD');
+    $record{OS_STATUS} = 'LIVING' if (exists($record{OS_STATUS}) && $record{OS_STATUS} eq 'ALIVE');
+    $record{OS_STATUS} = 'DECEASED' if (exists($record{OS_STATUS}) && $record{OS_STATUS} eq 'DEAD');
     my @values = map { $record{$_}; } @header_names;
     $output_fh->print(join("\t", @values) . "\n");
   }
