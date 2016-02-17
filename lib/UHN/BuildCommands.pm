@@ -18,9 +18,12 @@ use Carp;
 
 sub scan_paths {
   my ($cfg, $function, $pattern, @directories) = @_;
+
   @directories = map {
     File::Spec->rel2abs($_);
   } @directories;
+
+  @directories = grep { -d $_ } @directories;
 
   my @result = ();
   my $caller = sub {
