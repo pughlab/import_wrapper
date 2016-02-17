@@ -26,7 +26,7 @@ sub scan_paths {
   my $caller = sub {
     my $file = $File::Find::name;
     return if (! -f $file);
-    return if (defined($pattern) && ! $pattern =~ $file);
+    return if (defined($pattern) && $pattern !~ $file);
     my ($name, $path, $suffix) = fileparse($file);
     my $value = &$function($cfg, $name, $file);
     if (defined($value)) {
