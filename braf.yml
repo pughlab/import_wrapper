@@ -1,0 +1,21 @@
+---
+
+mutect_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/MutectVCF/output'
+mutect_pattern: '\.vcf$'
+
+varscan_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/Varscan'
+varscan_pattern: '\.vcf$'
+
+clinical_file: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/clinical.txt'
+
+cancer_study:
+  identifier: 'braf'
+  name: 'BRAF'
+  description: 'BRAF data set'
+  type_of_cancer: 'mel'
+  groups: ''
+  dedicated_color: 'Green'
+  short_name: 'BRAF'
+
+mutations:
+  genetic_alteration_type: 'MUTATION_EXTENDED'
