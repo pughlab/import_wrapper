@@ -25,6 +25,8 @@ sub scan_paths {
 
   @directories = grep { -d $_ } @directories;
 
+  return () if (! @directories);
+
   my @result = ();
   my $caller = sub {
     my $file = $File::Find::name;
