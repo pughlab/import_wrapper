@@ -1,6 +1,6 @@
 ---
 
-mutect_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/MutectVCF/output'
+mutect_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/MutectVCF/output/PASS'
 mutect_pattern: '\.vcf$'
 
 varscan_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/Varscan'
