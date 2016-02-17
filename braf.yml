@@ -24,4 +24,4 @@ mapping:
   sample_pattern: '(RAP-\d+)_\d+_T'
   patient_pattern: '$1'
   tumour_sample: '(RAP-\d+)_\d+_T'
-  normal_sample: '(RAP-\d+)_\d+_N'
+  normal_sample: '(RAP-\d+)_\w+_N'
