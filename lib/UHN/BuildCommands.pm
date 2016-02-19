@@ -48,8 +48,6 @@ sub scan_paths {
   };
   File::Find::find($caller, @directories);
 
-  @result = @result[0..5] if (@result > 5);
-
   return @result;
 }
 
