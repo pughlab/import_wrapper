@@ -3,14 +3,14 @@ vcf2maf: 'scripts/vcf2maf.pl'
 ## VEP configuration settings
 vep_path: '/mnt/work1/software/vep/83'
 vep_data: '/mnt/work1/data/commondata/ensembl/vep/83'
-vep_forks: 1
+vep_forks: 4
 vep_dir_plugins: '/mnt/work1/data/commondata/ensembl/vep/83/Plugins'
 ref_fasta: '/mnt/work1/data/commondata/ensembl/vep/83/homo_sapiens/83_GRCh37'
 no_vep_check_ref: true
 
 overwrite: false
 
-max_processes: 12
+max_processes: 4
 
 ## Default meta values
 cancer_study:
