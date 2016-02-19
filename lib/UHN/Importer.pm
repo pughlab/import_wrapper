@@ -183,6 +183,7 @@ sub execute_commands {
     $cfg->{LOGGER}->info("Command completed: $command->{index}: $command->{description}");
     $pm->finish;
   }
+  $pm->wait_all_children;
 
   $cfg->{LOGGER}->info("Done all commands");
 }
