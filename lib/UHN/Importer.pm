@@ -182,6 +182,8 @@ sub execute_commands {
     };
     $pm->finish;
   }
+
+  $cfg->{LOGGER}->info("Done all commands");
 }
 
 sub import_mutect_file {
