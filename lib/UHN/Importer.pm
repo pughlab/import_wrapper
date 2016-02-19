@@ -180,6 +180,7 @@ sub execute_commands {
       $cfg->{LOGGER}->error("Command failed: $?");
       croak($?);
     };
+    $cfg->{LOGGER}->info("Command completed: $command->{index}: $command->{description}");
     $pm->finish;
   }
 
