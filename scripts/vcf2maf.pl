@@ -157,6 +157,8 @@ sub GetBiotypePriority {
         'IG_V_pseudogene' => 8, # Inactivated immunoglobulin gene
         'TR_J_pseudogene' => 8, # Inactivated immunoglobulin gene
         'TR_V_pseudogene' => 8, # Inactivated immunoglobulin gene
+        'antisense_RNA' => 8, # Inactivated immunoglobulin gene
+        'tRNA' => 8, # Inactivated immunoglobulin gene
         'artifact' => 9, # Used to tag mistakes in the public databases (Ensembl/SwissProt/Trembl)
         '' => 9
     );
