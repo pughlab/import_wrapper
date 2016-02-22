@@ -28,8 +28,13 @@ sub get_sample_identifiers {
   my @values = ();
   my @result = ();
   if (defined $header) {
-    my @fields = split(/\s+/, $header);
+    my @fields = split(/\t/, $header);
     @values = @fields[9..$#fields];
+    foreach my $value (@values) {
+      if ($value =~ m{\s}) {
+        croak("Whitespace in a sample name: $file")
+      }
+    }
   } else {
     return;
   }
