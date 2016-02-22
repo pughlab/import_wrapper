@@ -13,6 +13,9 @@ use Parallel::ForkManager;
 use UHN::BuildCommands;
 use UHN::Samples;
 
+use Log::Log4perl;
+my $log = Log::Log4perl->get_logger('UHN::Importer');
+
 ## Stolen from scripts/vct2maf, so we can take a simple approach when merging all our
 ## data files.
 
