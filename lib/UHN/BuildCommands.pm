@@ -20,7 +20,7 @@ sub scan_paths {
   my ($cfg, $function, $pattern, $directory, @args) = @_;
 
   $directory = File::Spec->rel2abs($directory);
-  return if (! -f $directory);
+  return if (! -d $directory);
 
   my @result = ();
   my $caller = sub {
