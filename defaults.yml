@@ -6,11 +6,14 @@ vep_data: '/mnt/work1/data/commondata/ensembl/vep/83'
 vep_forks: 4
 vep_dir_plugins: '/mnt/work1/data/commondata/ensembl/vep/83/Plugins'
 ref_fasta: '/mnt/work1/data/commondata/ensembl/vep/83/homo_sapiens/83_GRCh37'
-no_vep_check_ref: true
+no_vep_check_ref: false
 
 overwrite: false
 
 max_processes: 4
+
+mutect_pattern: '\.vcf$'
+varscan_pattern: '\.vcf$'
 
 ## Default meta values
 cancer_study:
