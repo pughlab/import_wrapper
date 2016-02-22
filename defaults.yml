@@ -12,8 +12,23 @@ overwrite: false
 
 max_processes: 4
 
-mutect_pattern: '\.vcf$'
-varscan_pattern: '\.vcf$'
+source_pattern: '\.vcf$'
+
+clinical_attributes:
+  - name: 'PATIENT_ID'
+    description: 'Patient Identifier'
+    type: 'STRING'
+    label: 'PATIENT'
+    header: 'PATIENT_ID'
+    count: 1
+  - name: 'SAMPLE_ID'
+    description: 'Sample Identifier'
+    type: 'STRING'
+    label: 'SAMPLE'
+    header: 'SAMPLE_ID'
+    count: 1
+
+additional_clinical_attributes: []
 
 ## Default meta values
 cancer_study:

@@ -3,9 +3,31 @@ sources:
   exome:
     directory: '/mnt/work1/users/pughlab/projects/PJC003/Mutect_VCF/output/PASS'
     pattern: '\.vcf$'
+    origin: 'mutect'
+    attributes:
+      SAMPLE_TYPE:
+        - XENO: '(?i)xeno'
+        - ARCHIVE: '(?i)ffpe'
+        - BIOPSY: '(?i)ff[^a-z]'
+      SEQUENCING_TYPE: 'EXOME'
+    sample_pattern: '([^_]+)_([A-Z]+)_(Tumor|Normal)'
+    patient_pattern: '$1'
+    tumour_sample: '_Tumor$'
+    normal_sample: '_Mormal$'
   targeted:
     directory: '/mnt/work1/users/pughlab/projects/PJC_Targeted_Panel/Mutect_VCF/output/PASS'
     pattern: '\.vcf$'
+    origin: 'mutect'
+    attributes:
+      SAMPLE_TYPE:
+        - XENO: '(?i)xeno'
+        - ARCHIVE: '(?i)ffpe'
+        - BIOPSY: '(?i)ff[^a-z]'
+      SEQUENCING_TYPE: 'TARGETED'
+    sample_pattern: 'Target_([^_]+)_([A-Z]+)_(Tumor|Normal)'
+    patient_pattern: '$1'
+    tumour_sample: '_Tumor$'
+    normal_sample: '_Mormal$'
 
 clinical_file: ''
 
@@ -21,7 +43,7 @@ cancer_study:
 case_lists:
   all:
     name: 'All'
-    description: 'All'
+    description: 'All exome and targeted'
     data:
       union:
         - 'exome'
@@ -29,17 +51,8 @@ case_lists:
   exome:
     name: 'Exome'
     description: 'Exome'
-    data:
-      - 'exome'
+    data: 'exome'
   targeted:
     name: 'Targeted'
     description: 'Targeted'
-    data:
-      - 'targeted'
-  intersection:
-    name: 'Intersection'
-    description: 'Intersection'
-    data:
-      intersection:
-        - 'exome'
-        - 'targeted'
+    data: 'targeted'

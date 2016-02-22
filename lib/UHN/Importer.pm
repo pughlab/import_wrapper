@@ -49,11 +49,11 @@ sub build_import {
   my $clinical_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_clinical.txt");
   my $mutations_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_mutations_extended.txt");
   my $clinical_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_clinical.txt");
-  my $case_list_all_file = File::Spec->catfile($cfg->{OUTPUT}, "case_lists/cases_all.txt");
 
   my $commands = [];
   my $cases = {};
   build_commands($cfg, $commands);
+  add_case_data($cfg, $cases, $commands);
   read_clinical_data($cfg, $cases, $commands);
 
   if ($overwrite || ! -e $clinical_data_file) {
@@ -95,33 +95,90 @@ sub build_import {
   $clinical_meta{profile_description} =              $cfg->{clinical}->{profile_description};
   $clinical_meta{profile_name} =                     $cfg->{clinical}->{profile_name};
 
-  ## Get all patient identifiers sequenced
-  my $patients = {};
-  foreach my $command (@$commands) {
-    $patients->{$command->{sample}} = 1;
-  }
-  $patients = join("\t", sort keys %$patients);
-  my %case_list_all = ();
-  $case_list_all{cancer_study_identifier} =          $core_meta{cancer_study_identifier};
-  $case_list_all{stable_id} =                        $case_list_all{cancer_study_identifier} . "_all";
-  $case_list_all{case_list_name} =                   $cfg->{case_lists}->{all}->{name};
-  $case_list_all{case_list_description} =            $cfg->{case_lists}->{all}->{description};
-  $case_list_all{case_list_ids} =                    $patients;
-
-  ## Now we can do the unbelievable task of building a new file which contains the
-  ## MAF output of every single of these, merged.
-
   write_meta_file($study_meta_file, \%study_meta) if ($overwrite || ! -e $study_meta_file);
   write_meta_file($mutations_meta_file, \%mutations_meta) if ($overwrite || ! -e $mutations_meta_file);
   write_meta_file($clinical_meta_file, \%clinical_meta) if ($overwrite || ! -e $clinical_meta_file);
 
-  ## Case lists are essentially the same syntactically
-  write_meta_file($case_list_all_file, \%case_list_all) if ($overwrite || ! -e $case_list_all_file);
+  ## Now generate the case lists...
+  my $case_lists = $cfg->{case_lists};
+  my @case_list_keys = keys %$case_lists;
+  foreach my $case_list_key (@case_list_keys) {
+    my $case_list_file = File::Spec->catfile($cfg->{OUTPUT}, "case_lists/cases_$case_list_key.txt");
+
+    my %case_list = ();
+    $case_list{cancer_study_identifier} =          $core_meta{cancer_study_identifier};
+    $case_list{stable_id} =                        $case_list{cancer_study_identifier} . "_$case_list_key";
+    $case_list{case_list_name} =                   $cfg->{case_lists}->{$case_list_key}->{name};
+    $case_list{case_list_description} =            $cfg->{case_lists}->{$case_list_key}->{description};
+    $case_list{case_list_ids} =                    [ get_case_list_samples($cfg, $case_list_key, $commands) ];
+
+    ## Case lists are essentially the same syntactically
+    write_meta_file($case_list_file, \%case_list) if ($overwrite || ! -e $case_list_file);
+  }
+}
+
+sub get_case_list_samples {
+  my ($cfg, $case_list_key, $commands) = @_;
+
+  my $samples = {};
+
+  my $data = $cfg->{case_lists}->{$case_list_key}->{data};
+  if (ref($data) eq 'HASH') {
+
+    ## When we have an action, include all samples
+    my ($action) = keys %$data;
+    my @sources = $cfg->{case_lists}->{$case_list_key}->{data}->{$action};
+    foreach my $source (@sources) {
+      foreach my $command (@$commands) {
+        if ($command->{options}->{source} eq $source) {
+          $samples->{$command->{sample}} = 1;
+        }
+      }
+    }
+  } else {
+
+    ## Include just this sample
+    foreach my $command (@$commands) {
+      if ($command->{options}->{source} eq $data) {
+        $samples->{$command->{sample}} = 1;
+      }
+    }
+  }
+
+  return sort keys %$samples;
 }
 
 ## If we don't have a clinical file, we should apply some different rules. Use patterns
 ## to derive patient identifiers from sample identifiers, and only write minimal clinical
 ## information.
+
+sub add_case_data {
+  my ($cfg, $cases, $commands) = @_;
+
+  foreach my $command (@$commands) {
+    my $patient = $command->{patient};
+    my $sample = $command->{sample};
+
+    my $source_key = $command->{options}->{source};
+    my $attributes = $cfg->{sources}->{$source_key}->{attributes};
+    next if (! defined($attributes));
+
+    while(my ($key, $value) = each %$attributes) {
+      if (! ref($value)) {
+        $cases->{$sample}->{$key} = $value;
+      } elsif (ref($value) eq 'ARRAY') {
+        foreach my $entry (@$value) {
+          my ($k) = keys %$entry;
+          my $v = $entry->{$k};
+          if ($sample =~ m{$v}) {
+            $cases->{$sample}->{$key} = $k;
+            last;
+          }
+        }
+      }
+    }
+  }
+}
 
 sub read_clinical_data {
   my ($cfg, $cases, $commands) = @_;
@@ -135,7 +192,7 @@ sub read_clinical_data {
     while (my $row = $csv->getline($fh)) {
       my %record = ();
       @record{@$headers} = @$row;
-      $cases->{$record{PATIENT_ID}} = \%record;
+      $cases->{$record{SAMPLE_ID}} = \%record;
     }
     $cfg->{_clinical_file} = 1;
   } else {
@@ -144,7 +201,7 @@ sub read_clinical_data {
       my $patient = $command->{patient};
       my $sample = $command->{sample};
       my %record = (PATIENT_ID => $patient, SAMPLE_ID => $sample);
-      $cases->{$record{PATIENT_ID}} = \%record;
+      $cases->{$record{SAMPLE_ID}} = \%record;
     }
     $cfg->{_clinical_file} = 0;
   }
@@ -153,16 +210,18 @@ sub read_clinical_data {
 sub build_commands {
   my ($cfg, $commands) = @_;
 
-  my $mutect_directory = $cfg->{mutect_directory} // croak("Missing mutect_directory configuration");
-  my $varscan_directory = $cfg->{varscan_directory} // croak("Missing varscan_directory configuration");
-  my $mutect_pattern = $cfg->{mutect_pattern};
-  my $varscan_pattern = $cfg->{varscan_pattern};
-  my @mutect_commands = UHN::BuildCommands::scan_paths($cfg, \&import_mutect_file, $mutect_pattern, $mutect_directory);
-  my @varscan_commands = UHN::BuildCommands::scan_paths($cfg, \&import_varscan_file, $varscan_pattern, $varscan_directory);
-  my @commands = (@mutect_commands, @varscan_commands);
-
   $#$commands = -1;
-  push @$commands, (@mutect_commands, @varscan_commands);
+
+  my $sources = $cfg->{sources};
+  my @source_keys = keys %$sources;
+  foreach my $source_key (@source_keys) {
+    my $directory = $sources->{$source_key}->{directory} // croak("Missing directory configuration for source: $source_key");
+    my $pattern = $sources->{$source_key}->{pattern} // $sources->{pattern} // $cfg->{source_pattern};
+    my $origin = $sources->{$source_key}->{origin} // croak("Missing origin for source: $source_key");
+    my @source_commands = UHN::BuildCommands::scan_paths($cfg, \&import_vcf_file, $pattern, $directory, {type => $origin, source => $source_key});
+    push @$commands, @source_commands;
+  }
+
   return $commands;
 }
 
@@ -188,35 +247,11 @@ sub execute_commands {
   $cfg->{LOGGER}->info("Done all commands");
 }
 
-sub import_mutect_file {
-  my ($cfg,  $base, $path) = @_;
-  import_vcf_file($cfg, 'mutect', $base, $path);
-}
-
-sub import_varscan_file {
-  my ($cfg,  $base, $path) = @_;
-  import_vcf_file($cfg, 'varscan', $base, $path);
-}
-
 sub write_clinical_data {
   my ($cfg, $output, $commands, $cases) = @_;
 
-  my @headers = (
-    {name => 'PATIENT_ID', description => 'Patient Identifier', type => 'STRING', label => 'PATIENT', header => 'PATIENT_ID', count => 1},
-    {name => 'SAMPLE_ID', description => 'Sample Identifier', type => 'STRING', label => 'SAMPLE', header => 'SAMPLE_ID', count => 1},
-  );
-
-  if ($cfg->{_clinical_file}) {
-    push @headers,
-      {name => 'OS_MONTHS', description => 'Overall Survival', type => 'NUMBER', label => 'PATIENT', header => 'OS_MONTHS', count => 1},
-      {name => 'OS_STATUS', description => 'Overall Status', type => 'STRING', label => 'PATIENT', header => 'OS_STATUS', count => 1},
-      {name => 'AGE_DIAGNOSIS', description => 'Age at Diagnosis', type => 'NUMBER', label => 'PATIENT', header => 'AGE_DIAGNOSIS', count => 1},
-      {name => 'AGE_BIOPSY', description => 'Age at Biopsy', type => 'NUMBER', label => 'PATIENT', header => 'AGE_BIOPSY', count => 1},
-      {name => 'SEX', description => 'Sex', type => 'STRING', label => 'PATIENT', header => 'SEX', count => 1},
-      {name => 'YEAR_DIAGNOSIS', description => 'Year of Diagnosis', type => 'STRING', label => 'PATIENT', header => 'YEAR_DIAGNOSIS', count => 1},
-      {name => 'PRIMARY_SITE', description => 'Cancer Type', type => 'STRING', label => 'PATIENT', header => 'PRIMARY_SITE', count => 1},
-      {name => 'ONCOTREE_CODE', description => 'Cancer Type', type => 'STRING', label => 'PATIENT', header => 'ONCOTREE_CODE', count => 1};
-  };
+  my @headers = @{$cfg->{clinical_attributes}};
+  push @headers, @{$cfg->{additional_clinical_attributes}};
 
   my $output_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
   $output_fh->print("#" . join("\t", map { $_->{name} } @headers) . "\n");
@@ -237,7 +272,7 @@ sub write_clinical_data {
 
   foreach my $pair (sort keys %pairs) {
     my ($sample, $patient) = split("\t", $pair);
-    my $case = $cases->{$patient} // do { carp("Can't find patient case data: $patient"); undef; };
+    my $case = $cases->{$sample} // do { carp("Can't find sample case data: $sample"); undef; };
     my %record = ();
     @record{@header_names} = map { defined($case) ? $case->{$_} : ""; } @header_names;
     $record{PATIENT_ID} = $patient;
@@ -273,7 +308,7 @@ sub write_extended_mutations_data {
 }
 
 sub import_vcf_file {
-  my ($cfg, $type, $base, $path) = @_;
+  my ($cfg, $base, $path, $options) = @_;
 
   $cfg->{_vcf_count} //= 1;
 
@@ -294,7 +329,7 @@ sub import_vcf_file {
   ## are going to need this file...
 
   my $directory = "$cfg->{TEMP_DIRECTORY}";
-  my ($temp_fh, $temp_filename) = tempfile( "${type}_XXXXXXXX", SUFFIX => '.maf', DIR => $directory);
+  my ($temp_fh, $temp_filename) = tempfile( "import_vcf_XXXXXXXXX", SUFFIX => '.maf', DIR => $directory);
   $temp_fh->close();
   unlink($temp_filename);
 
@@ -303,9 +338,9 @@ sub import_vcf_file {
     output => $temp_filename,
     patient => $patient,
     sample => $tumour,
-    type => $type,
     index => $cfg->{_vcf_count}++,
     description => "vcf2maf for $patient $tumour $path",
+    options => $options,
     arguments => [
       '--input-vcf', $path,
       '--tumor-id', $tumour,
