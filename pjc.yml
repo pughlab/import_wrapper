@@ -10,8 +10,8 @@ sources:
         - ARCHIVE: '(?i)ffpe'
         - BIOPSY: '(?i)ff[^a-z]'
       SEQUENCING_TYPE: 'EXOME'
-    sample_pattern: '([^_]+)_([A-Z]+)_(Tumor|Normal)'
-    patient_pattern: '$1'
+    sample_matcher: '([^_]+)_([A-Z]+)_(Tumor|Normal)'
+    patient_generator: '$1'
     tumour_sample: '_Tumor$'
     normal_sample: '_Normal$'
   targeted:
@@ -24,8 +24,8 @@ sources:
         - ARCHIVE: '(?i)ffpe'
         - BIOPSY: '(?i)ff[^a-z]'
       SEQUENCING_TYPE: 'TARGETED'
-    sample_pattern: 'Target_([^_]+)_([A-Z]+)_(Tumor|Normal)'
-    patient_pattern: '$1'
+    sample_matcher: 'Target_([^_]+)_([A-Z]+)_(Tumor|Normal)'
+    patient_generator: '$1'
     tumour_sample: '_Tumor$'
     normal_sample: '_Normal$'
 

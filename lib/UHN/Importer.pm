@@ -321,11 +321,15 @@ sub import_vcf_file {
     croak("Can't extract tumour/normal sample identifiers from: $path");
   }
 
+  my $tumour_sample_matcher = $sources->{$source}->{sample_matcher} // $sources->{sample_matcher} // $cfg->{tumour_sample_matcher};
+  my $tumour_patient_generator = $sources->{$source}->{patient_generator} // $sources->{patient_generator} // $cfg->{tumour_patient_generator};
+
   my $patient = $tumour;
-  if ($patient =~ s{$cfg->{mapping}->{sample_pattern}}{$cfg->{mapping}->{patient_pattern}}ee) {
+  my $sample_pattern =
+  if ($patient =~ s{$tumour_sample_matcher}{$tumour_patient_generator}ee) {
     ## Good to go
   } else {
-    croak("Can't match sample pattern: " . $cfg->{mapping}->{sample_pattern} . ", original: " . $patient);
+    die("Can't match sample pattern: " . $tumour_sample_matcher . ", original: " . $patient);
   }
 
   ## Make a temporary file place, but we need to track this, because we
