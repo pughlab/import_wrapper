@@ -218,7 +218,7 @@ sub build_commands {
     my $directory = $sources->{$source_key}->{directory} // croak("Missing directory configuration for source: $source_key");
     my $pattern = $sources->{$source_key}->{pattern} // $sources->{pattern} // $cfg->{source_pattern};
     my $origin = $sources->{$source_key}->{origin} // croak("Missing origin for source: $source_key");
-    my @source_commands = UHN::BuildCommands::scan_paths($cfg, \&import_vcf_file, $pattern, $directory, {type => $origin, source => $source_key});
+    my @source_commands = UHN::BuildCommands::scan_paths($cfg, \&import_vcf_file, $pattern, $directory, $source_key, {type => $origin, source => $source_key});
     push @$commands, @source_commands;
   }
 
@@ -308,11 +308,11 @@ sub write_extended_mutations_data {
 }
 
 sub import_vcf_file {
-  my ($cfg, $base, $path, $options) = @_;
+  my ($cfg, $base, $path, $source, $options) = @_;
 
   $cfg->{_vcf_count} //= 1;
 
-  my ($tumour, $normal) = UHN::Samples::get_sample_identifiers($cfg, $path);
+  my ($tumour, $normal) = UHN::Samples::get_sample_identifiers($cfg, $source, $path);
   if (! $tumour || ! $normal) {
     $cfg->{LOGGER}->error("Can't extract tumour/normal sample identifiers from: $path");
     croak("Can't extract tumour/normal sample identifiers from: $path");
