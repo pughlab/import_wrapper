@@ -196,7 +196,7 @@ sub read_clinical_data {
     }
     $cfg->{_clinical_file} = 1;
   } else {
-    warn("No clinical data file: falling back to identifier mapping");
+    $log->warn("No clinical data file: falling back to identifier mapping");
     foreach my $command (@$commands) {
       my $patient = $command->{patient};
       my $sample = $command->{sample};
