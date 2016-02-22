@@ -1,0 +1,45 @@
+---
+sources:
+  exome:
+    directory: '/mnt/work1/users/pughlab/projects/PJC003/Mutect_VCF/output/PASS'
+    pattern: '\.vcf$'
+  targeted:
+    directory: '/mnt/work1/users/pughlab/projects/PJC_Targeted_Panel/Mutect_VCF/output/PASS'
+    pattern: '\.vcf$'
+
+clinical_file: ''
+
+cancer_study:
+  identifier: 'pjc'
+  name: 'PJC'
+  description: 'PJC'
+  type_of_cancer: 'mixed'
+  groups: ''
+  dedicated_color: 'Blue'
+  short_name: 'PJC'
+
+case_lists:
+  all:
+    name: 'All'
+    description: 'All'
+    data:
+      union:
+        - 'exome'
+        - 'targeted'
+  exome:
+    name: 'Exome'
+    description: 'Exome'
+    data:
+      - 'exome'
+  targeted:
+    name: 'Targeted'
+    description: 'Targeted'
+    data:
+      - 'targeted'
+  intersection:
+    name: 'Intersection'
+    description: 'Intersection'
+    data:
+      intersection:
+        - 'exome'
+        - 'targeted'
