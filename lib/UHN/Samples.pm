@@ -5,6 +5,9 @@ use warnings;
 
 use Carp;
 
+use Log::Log4perl;
+my $log = Log::Log4perl->get_logger('UHN::Samples');
+
 ## A small module that, given a Vcf, finds the samples as tumour, normal.
 ## This is from the "#CHROM header" line, and is essentially the
 ## columns after FORMAT.
@@ -32,7 +35,10 @@ sub get_sample_identifiers {
     @values = @fields[9..$#fields];
     foreach my $value (@values) {
       if ($value =~ m{\s}) {
-        croak("Whitespace in a sample name: $file")
+        my $original = $value;
+        $value =~ s{^\s+}{};
+        $value =~ s{\s+$}{};
+        $log->error("Whitespace in a sample name: '$original' in $file; fixing to '$value'");
       }
     }
   } else {
