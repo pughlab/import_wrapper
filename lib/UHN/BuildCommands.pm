@@ -17,15 +17,10 @@ use Carp;
 ## returns a value, we accumulate it into a list result.
 
 sub scan_paths {
-  my ($cfg, $function, $pattern, @directories, @args) = @_;
+  my ($cfg, $function, $pattern, $directory, @args) = @_;
 
-  @directories = map {
-    File::Spec->rel2abs($_);
-  } @directories;
-
-  @directories = grep { -d $_ } @directories;
-
-  return () if (! @directories);
+  $directory = File::Spec->rel2abs($directory);
+  return if (! -f $directory);
 
   my @result = ();
   my $caller = sub {
@@ -46,7 +41,7 @@ sub scan_paths {
     no_chdir => 1,
     preprocess => sub { return sort @_ },
   };
-  File::Find::find($caller, @directories);
+  File::Find::find($caller, $directory);
 
   return @result;
 }
