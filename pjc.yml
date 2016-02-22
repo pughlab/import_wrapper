@@ -13,7 +13,7 @@ sources:
     sample_pattern: '([^_]+)_([A-Z]+)_(Tumor|Normal)'
     patient_pattern: '$1'
     tumour_sample: '_Tumor$'
-    normal_sample: '_Mormal$'
+    normal_sample: '_Normal$'
   targeted:
     directory: '/mnt/work1/users/pughlab/projects/PJC_Targeted_Panel/Mutect_VCF/output/PASS'
     pattern: '\.vcf$'
@@ -27,7 +27,7 @@ sources:
     sample_pattern: 'Target_([^_]+)_([A-Z]+)_(Tumor|Normal)'
     patient_pattern: '$1'
     tumour_sample: '_Tumor$'
-    normal_sample: '_Mormal$'
+    normal_sample: '_Normal$'
 
 clinical_file: ''
 
