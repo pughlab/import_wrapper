@@ -63,13 +63,6 @@ sub build_import {
     write_clinical_data($cfg, $clinical_data_file, $commands, $cases);
   }
 
-  if ($overwrite || ! -e $mutations_data_file) {
-    execute_commands($cfg, $commands);
-    $cfg->{LOGGER}->info("Merging MAF files into: $mutations_data_file");
-    my @mafs = map { $_->{output} } (@$commands);
-    write_extended_mutations_data($cfg, $mutations_data_file, @mafs);
-  }
-
   my %core_meta = ();
   $core_meta{cancer_study_identifier} =              $cfg->{cancer_study}->{identifier};
 
@@ -117,6 +110,14 @@ sub build_import {
 
     ## Case lists are essentially the same syntactically
     write_meta_file($case_list_file, \%case_list) if ($overwrite || ! -e $case_list_file);
+  }
+
+  ## Do the mutations last as annotation takes a while...
+  if ($overwrite || ! -e $mutations_data_file) {
+    execute_commands($cfg, $commands);
+    $cfg->{LOGGER}->info("Merging MAF files into: $mutations_data_file");
+    my @mafs = map { $_->{output} } (@$commands);
+    write_extended_mutations_data($cfg, $mutations_data_file, @mafs);
   }
 }
 
