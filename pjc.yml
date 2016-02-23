@@ -29,6 +29,21 @@ sources:
     tumour_sample: '(?i)_Tumor$'
     normal_sample: '(?i)_Normal$'
 
+additional_clinical_attributes:
+  - name: 'SAMPLE_TYPE'
+    description: 'Sample type'
+    type: 'STRING'
+    label: 'SAMPLE'
+    header: 'SAMPLE_TYPE'
+    count: 1
+  - name: 'SEQUENCING_TYPE'
+    description: 'Sequencing type'
+    type: 'STRING'
+    label: 'SAMPLE'
+    header: 'SEQUENCING_TYPE'
+    count: 1
+
+
 clinical_file: ''
 
 cancer_study:
