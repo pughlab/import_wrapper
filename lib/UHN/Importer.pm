@@ -106,7 +106,7 @@ sub build_import {
     $case_list{stable_id} =                        $case_list{cancer_study_identifier} . "_$case_list_key";
     $case_list{case_list_name} =                   $cfg->{case_lists}->{$case_list_key}->{name};
     $case_list{case_list_description} =            $cfg->{case_lists}->{$case_list_key}->{description};
-    $case_list{case_list_ids} =                    [ get_case_list_samples($cfg, $case_list_key, $commands) ];
+    $case_list{case_list_ids} =                    join("\t", get_case_list_samples($cfg, $case_list_key, $commands));
 
     ## Case lists are essentially the same syntactically
     write_meta_file($case_list_file, \%case_list) if ($overwrite || ! -e $case_list_file);
