@@ -184,6 +184,13 @@ sub add_case_data {
   }
 }
 
+sub copy_hash {
+  my ($target, $source) = @_;
+  while(my ($k, $v) = each %$source) {
+    $target->{$k} = $v;
+  }
+}
+
 sub read_clinical_data {
   my ($cfg, $cases, $commands) = @_;
 
@@ -196,7 +203,7 @@ sub read_clinical_data {
     while (my $row = $csv->getline($fh)) {
       my %record = ();
       @record{@$headers} = @$row;
-      $cases->{$record{SAMPLE_ID}} = \%record;
+      copy_hash($cases->{$record{SAMPLE_ID}}, \%record);
     }
     $cfg->{_clinical_file} = 1;
   } else {
@@ -205,7 +212,7 @@ sub read_clinical_data {
       my $patient = $command->{patient};
       my $sample = $command->{sample};
       my %record = (PATIENT_ID => $patient, SAMPLE_ID => $sample);
-      $cases->{$record{SAMPLE_ID}} = \%record;
+      copy_hash($cases->{$record{SAMPLE_ID}}, \%record);
     }
     $cfg->{_clinical_file} = 0;
   }

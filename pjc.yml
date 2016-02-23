@@ -31,13 +31,13 @@ sources:
 
 additional_clinical_attributes:
   - name: 'SAMPLE_TYPE'
-    description: 'Sample type'
+    description: 'Sample Type'
     type: 'STRING'
     label: 'SAMPLE'
     header: 'SAMPLE_TYPE'
     count: 1
   - name: 'SEQUENCING_TYPE'
-    description: 'Sequencing type'
+    description: 'Sequencing Type'
     type: 'STRING'
     label: 'SAMPLE'
     header: 'SEQUENCING_TYPE'
