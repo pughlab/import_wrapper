@@ -131,8 +131,8 @@ sub get_case_list_samples {
 
     ## When we have an action, include all samples
     my ($action) = keys %$data;
-    my @sources = $cfg->{case_lists}->{$case_list_key}->{data}->{$action};
-    foreach my $source (@sources) {
+    my $sources = $cfg->{case_lists}->{$case_list_key}->{data}->{$action};
+    foreach my $source (@$sources) {
       foreach my $command (@$commands) {
         if ($command->{options}->{source} eq $source) {
           $samples->{$command->{sample}} = 1;
