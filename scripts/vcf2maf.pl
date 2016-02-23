@@ -341,8 +341,11 @@ while( my $line = $vcf_fh->getline ) {
             @tum_depths = map{( m/^\d+$/ ? $_ : "" )}split( /,/, $tum_info{AD} );
         }
 
+        if (scalar( @tum_depths ) == 2) {
+          ## Do nothing
+        }
         # Handle VarScan VCF lines where AD contains only 1 depth, and REF allele depth is in RD
-        if( scalar( @tum_depths ) == 1 and defined $tum_info{RD} ) {
+        elsif( scalar( @tum_depths ) == 1 and defined $tum_info{RD} ) {
             @tum_depths = map{""} @alleles;
             $tum_depths[0] = $tum_info{RD};
             $tum_depths[$var_allele_idx] = $tum_info{AD};
@@ -447,8 +450,11 @@ while( my $line = $vcf_fh->getline ) {
             @nrm_depths = map{( m/^\d+$/ ? $_ : "" )}split( /,/, $nrm_info{AD} );
         }
 
+        if (scalar( @nrm_depths ) == 2) {
+          ## Do nothing
+        }
         # Handle VCF lines by VarScan where REF allele depth is stored separately in an RD tag
-        if( scalar( @nrm_depths ) == 1 and defined $nrm_info{RD} ) {
+        elsif( scalar( @nrm_depths ) == 1 and defined $nrm_info{RD} ) {
             @nrm_depths = map{""} @alleles;
             $nrm_depths[0] = $nrm_info{RD};
             $nrm_depths[$var_allele_idx] = $nrm_info{AD};
