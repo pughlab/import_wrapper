@@ -260,7 +260,7 @@ my @maf_header = qw(
     Match_Norm_Validation_Allele1 Match_Norm_Validation_Allele2 Verification_Status
     Validation_Status Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score
     BAM_File Sequencer Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp HGVSp_Short Transcript_ID
-    Exon_Number t_depth t_ref_count t_alt_count n_depth n_ref_count n_alt_count all_effects
+    Exon_Number t_depth t_ref_count t_alt_count tumor_vaf n_depth n_ref_count n_alt_count normal_vaf all_effects
 );
 
 # Add extra annotation columns to the MAF in a consistent order
@@ -322,7 +322,7 @@ while( my $line = $vcf_fh->getline ) {
     my $var_allele_idx = 1;
 
     # Parse out info from the tumor genotype field
-    my ( %tum_info, @tum_depths );
+    my ( %tum_info, @tum_depths, $tum_freq );
     if( defined $vcf_tumor_idx ) {
         my @format_keys = split( /\:/, $format_line );
         my $idx = 0;
@@ -383,6 +383,7 @@ while( my $line = $vcf_fh->getline ) {
             # Reference allele depth and depths for any other ALT alleles must be left undefined
             @tum_depths = map{""} @alleles;
             $tum_depths[$var_allele_idx] = sprintf( "%.0f", $tum_info{FA} * $tum_info{DP} );
+            $tum_freq = $tum_info{FA};
         }
         # Handle VCF lines where AD contains only 1 value, that we can assume is the variant allele
         elsif( defined $tum_info{AD} and @tum_depths and scalar( @tum_depths ) == 1 ) {
@@ -439,7 +440,7 @@ while( my $line = $vcf_fh->getline ) {
     }
 
     # Same as above, parse out info from the normal genotype field
-    my ( %nrm_info, @nrm_depths );
+    my ( %nrm_info, @nrm_depths, $nrm_freq );
     if( defined $vcf_normal_idx ) {
         my @format_keys = split( /\:/, $format_line );
         my $idx = 0;
@@ -492,6 +493,7 @@ while( my $line = $vcf_fh->getline ) {
             # Reference allele depth and depths for any other ALT alleles must be left undefined
             @nrm_depths = map{""} @alleles;
             $nrm_depths[$var_allele_idx] = sprintf( "%.0f", $nrm_info{FA} * $nrm_info{DP} );
+            $nrm_freq = $nrm_info{FA};
         }
         # Handle VCF lines where AD contains only 1 value, that we can assume is the variant allele
         elsif( defined $nrm_info{AD} and @nrm_depths and scalar( @nrm_depths ) == 1 ) {
@@ -695,6 +697,9 @@ while( my $line = $vcf_fh->getline ) {
     ( $maf_line{t_ref_count}, $maf_line{t_alt_count} ) = @tum_depths[0,$var_allele_idx] if( @tum_depths );
     $maf_line{n_depth} = $nrm_info{DP} if( defined $nrm_info{DP} and $nrm_info{DP} ne "." );
     ( $maf_line{n_ref_count}, $maf_line{n_alt_count} ) = @nrm_depths[0,$var_allele_idx] if( @nrm_depths );
+
+    $maf_line{tumor_vaf} = $tum_freq if (defined($tum_freq));
+    $maf_line{normal_vaf} = $nrm_freq if (defined($nrm_freq));
 
     # Create a semicolon delimited list summarizing the prioritized effects in @all_effects
     $maf_line{all_effects} = "";
