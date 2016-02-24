@@ -301,6 +301,10 @@ while( my $line = $vcf_fh->getline ) {
 
     # If FORMATted genotype fields are available, find the sample with the variant, and matched normal
     if( $line =~ m/^#CHROM/ ) {
+
+        ## Trim whitespace off column identifiers -- just in case
+        @rest = map { s{^\s+}{}; s{\s+$}{}; $_; } @rest;
+        
         if( $format_line and scalar( @rest ) > 0 ) {
             for( my $i = 0; $i <= $#rest; ++$i ) {
                 $vcf_tumor_idx = $i if( $rest[$i] eq $vcf_tumor_id );
