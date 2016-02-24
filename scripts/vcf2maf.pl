@@ -383,6 +383,7 @@ while( my $line = $vcf_fh->getline ) {
             # Reference allele depth and depths for any other ALT alleles must be left undefined
             @tum_depths = map{""} @alleles;
             $tum_depths[$var_allele_idx] = sprintf( "%.0f", $tum_info{FA} * $tum_info{DP} );
+            $tum_depths[1 - $var_allele_idx] = sprintf( "%.0f", $tum_info{DP} - ($tum_info{FA} * $tum_info{DP}) );
             $tum_freq = $tum_info{FA};
         }
         # Handle VCF lines where AD contains only 1 value, that we can assume is the variant allele
@@ -493,6 +494,7 @@ while( my $line = $vcf_fh->getline ) {
             # Reference allele depth and depths for any other ALT alleles must be left undefined
             @nrm_depths = map{""} @alleles;
             $nrm_depths[$var_allele_idx] = sprintf( "%.0f", $nrm_info{FA} * $nrm_info{DP} );
+            $nrm_depths[1 - $var_allele_idx] = sprintf( "%.0f", $nrm_info{DP} - ($nrm_info{FA} * $nrm_info{DP}) );
             $nrm_freq = $nrm_info{FA};
         }
         # Handle VCF lines where AD contains only 1 value, that we can assume is the variant allele
