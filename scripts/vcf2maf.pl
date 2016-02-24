@@ -341,6 +341,10 @@ while( my $line = $vcf_fh->getline ) {
             @tum_depths = map{( m/^\d+$/ ? $_ : "" )}split( /,/, $tum_info{AD} );
         }
 
+        if( defined $tum_info{FA} {
+          $tum_freq = $tum_info{FA};
+        }
+
         if (scalar( @tum_depths ) == 2) {
           ## Do nothing
         }
@@ -384,7 +388,6 @@ while( my $line = $vcf_fh->getline ) {
             @tum_depths = map{""} @alleles;
             $tum_depths[$var_allele_idx] = sprintf( "%.0f", $tum_info{FA} * $tum_info{DP} );
             $tum_depths[1 - $var_allele_idx] = sprintf( "%.0f", $tum_info{DP} - ($tum_info{FA} * $tum_info{DP}) );
-            $tum_freq = $tum_info{FA};
         }
         # Handle VCF lines where AD contains only 1 value, that we can assume is the variant allele
         elsif( defined $tum_info{AD} and @tum_depths and scalar( @tum_depths ) == 1 ) {
@@ -452,6 +455,10 @@ while( my $line = $vcf_fh->getline ) {
             @nrm_depths = map{( m/^\d+$/ ? $_ : "" )}split( /,/, $nrm_info{AD} );
         }
 
+        if( defined $nrm_info{FA} {
+          $nrm_freq = $nrm_info{FA};
+        }
+
         if (scalar( @nrm_depths ) == 2) {
           ## Do nothing
         }
@@ -495,7 +502,6 @@ while( my $line = $vcf_fh->getline ) {
             @nrm_depths = map{""} @alleles;
             $nrm_depths[$var_allele_idx] = sprintf( "%.0f", $nrm_info{FA} * $nrm_info{DP} );
             $nrm_depths[1 - $var_allele_idx] = sprintf( "%.0f", $nrm_info{DP} - ($nrm_info{FA} * $nrm_info{DP}) );
-            $nrm_freq = $nrm_info{FA};
         }
         # Handle VCF lines where AD contains only 1 value, that we can assume is the variant allele
         elsif( defined $nrm_info{AD} and @nrm_depths and scalar( @nrm_depths ) == 1 ) {
