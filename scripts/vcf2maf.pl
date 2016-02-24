@@ -341,7 +341,7 @@ while( my $line = $vcf_fh->getline ) {
             @tum_depths = map{( m/^\d+$/ ? $_ : "" )}split( /,/, $tum_info{AD} );
         }
 
-        if( defined $tum_info{FA} {
+        if( defined $tum_info{FA}) {
           $tum_freq = $tum_info{FA};
         }
 
@@ -455,7 +455,7 @@ while( my $line = $vcf_fh->getline ) {
             @nrm_depths = map{( m/^\d+$/ ? $_ : "" )}split( /,/, $nrm_info{AD} );
         }
 
-        if( defined $nrm_info{FA} {
+        if( defined $nrm_info{FA}) {
           $nrm_freq = $nrm_info{FA};
         }
 
