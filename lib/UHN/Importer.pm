@@ -28,7 +28,7 @@ my @maf_header = qw(
     Match_Norm_Validation_Allele1 Match_Norm_Validation_Allele2 Verification_Status
     Validation_Status Mutation_Status Sequencing_Phase Sequence_Source Validation_Method Score
     BAM_File Sequencer Tumor_Sample_UUID Matched_Norm_Sample_UUID HGVSc HGVSp HGVSp_Short Transcript_ID
-    Exon_Number t_depth t_ref_count t_alt_count n_depth n_ref_count n_alt_count all_effects
+    Exon_Number t_depth t_ref_count t_alt_count tumor_vaf n_depth n_ref_count n_alt_count normal_vaf all_effects
 );
 
 # Add extra annotation columns to the MAF in a consistent order
