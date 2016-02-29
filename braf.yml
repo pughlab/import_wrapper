@@ -1,8 +1,20 @@
 ---
 
-mutect_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/MutectVCF/output/PASS'
-
-varscan_directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/Varscan'
+sources:
+  mutect:
+    directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/MutectVCF/output/PASS'
+    pattern: '(?i)\.vcf$'
+    sample_matcher: '(RAP-\d+)_\d+_T$'
+    patient_generator: '$1'
+    tumour_sample: 'RAP-\d+)_\d+_T$'
+    normal_sample: 'RAP-\d+)_\d+_N$'
+  varscan:
+    directory: '/mnt/work1/users/pughlab/projects/BRAF_Melanoma/Varscan/output/PASS'
+    pattern: '(?i)\.vcf$'
+    sample_matcher: '(RAP-\d+)_\d+_T$'
+    patient_generator: '$1'
+    tumour_sample: 'RAP-\d+)_\d+_T$'
+    normal_sample: 'RAP-\d+)_\d+_N$'
 
 clinical_file: ''
 
@@ -15,8 +27,11 @@ cancer_study:
   dedicated_color: 'Green'
   short_name: 'BRAF'
 
-mapping:
-  sample_pattern: '(RAP-\d+)_\d+_T'
-  patient_pattern: '$1'
-  tumour_sample: '(RAP-\d+)_\d+_T'
-  normal_sample: '(RAP-\d+)_\w+_N'
+case_lists:
+  all:
+    name: 'All'
+    description: 'All mutations'
+    data:
+      union:
+        - 'mutect'
+        - 'varscan'
