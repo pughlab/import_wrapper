@@ -2,7 +2,7 @@
 
 ### TL;DR
 
-    perl import_wrapper.pl --config <config.yml> --output <directory>
+    perl import.pl --config <config.yml> --output <directory>
 
 ### See the wiki for more information:
 

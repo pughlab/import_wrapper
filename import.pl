@@ -80,8 +80,9 @@ import.pl - Script to import data into cBioPortal
 
 import.pl [options]
  Options:
-   --help            brief help message
-   --config file     load configuration from the given file
+   --help                 brief help message
+   --config file          load configuration from the given file
+   --output directory     where to write the data for cBioPortal
 
 =head1 OPTIONS
 
@@ -91,16 +92,20 @@ import.pl [options]
 
 Print a brief help message and exits.
 
-=item B<-man>
+=item B<--config>
 
 Loads configuration from the given file.
+
+=item B<--output>
+
+where to write the data for cBioPortal. Defaults to a subdirectory "out"
 
 =back
 
 =head1 DESCRIPTION
 
 B<This program> will read the given configuration file and build an
-import directory for cBioPortal. This can be loaded using the Java
-script runner.
+import directory for cBioPortal. The resulting data can be loaded using the Java
+script runner, which is a different story.
 
 =cut
