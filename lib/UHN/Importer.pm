@@ -165,7 +165,10 @@ sub add_case_data {
 
     my $source_key = $command->{options}->{source};
     my $attributes = $cfg->{sources}->{$source_key}->{attributes};
-    next if (! defined($attributes));
+    if (! defined($attributes)) {
+      $cases->{$sample} //= {};
+      next;
+    }
 
     while(my ($key, $value) = each %$attributes) {
       if (! ref($value)) {
