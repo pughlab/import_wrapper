@@ -245,10 +245,11 @@ sub execute_commands {
   my $pm = new Parallel::ForkManager($cfg->{max_processes});
   foreach my $command (@$commands) {
     my @args = ($command->{script}, @{$command->{arguments}});
+
+    my $pid = $pm->start and next;
     $cfg->{LOGGER}->info("Processing file $command->{index}: $command->{description}");
     $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
 
-    my $pid = $pm->start and next;
     system(@args) == 0 or do {
       $cfg->{LOGGER}->error("Command failed: $?");
       croak($?);

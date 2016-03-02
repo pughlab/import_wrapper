@@ -174,7 +174,7 @@ unless( @ARGV and $ARGV[0] =~ m/^-/ ) {
 }
 
 # Parse options and print usage if there is a syntax error, or if usage was explicitly requested
-my ( $man, $help, $vep_check_ref ) = ( 0, 0, 1 );
+my ( $man, $help, $vep_check_ref, $vep_buffer_size ) = ( 0, 0, 1, 2000 );
 my ( $input_vcf, $output_maf, $custom_enst_file );
 my ( $vcf_tumor_id, $vcf_normal_id );
 GetOptions(
@@ -192,6 +192,7 @@ GetOptions(
     'vep-forks=s' => \$vep_forks,
     'vep-dir-plugins=s' => \$vep_dir_plugins,
     'vep-check-ref!' => \$vep_check_ref,
+    'vep-buffer_size=s' => \$vep_buffer_size,
     'ref-fasta=s' => \$ref_fasta,
     'species=s' => \$species,
     'ncbi-build=s' => \$ncbi_build,
@@ -232,6 +233,7 @@ if( $input_vcf ) {
         # Contruct VEP command using some default options and run it
         my $vep_cmd = "$perl_bin $vep_path/variant_effect_predictor.pl --species $species --assembly $ncbi_build --offline --merged --no_progress --no_stats --sift b --ccds --uniprot --hgvs --symbol --numbers --domains --gene_phenotype --regulatory --canonical --protein --biotype --uniprot --tsl --pubmed --variant_class --shift_hgvs 1 --check_existing --check_alleles --total_length --allele_number --no_escape --xref_refseq --failed 1 --vcf --minimal --flag_pick_allele --pick_order canonical,tsl,biotype,rank,ccds,length --dir $vep_data --fasta $ref_fasta --input_file $input_vcf --output_file $output_vcf";
         $vep_cmd .= " --fork $vep_forks" if( $vep_forks > 1 ); # VEP barks if it's set to 1
+        $vep_cmd .= " --buffer_size $vep_buffer_size" if( defined($vep_buffer_size));
         $vep_cmd .= " --dir_plugins $vep_dir_plugins" if ($vep_dir_plugins);
         $vep_cmd .= " --check_ref" if ($vep_check_ref);
         # Add options that only work on human variants
@@ -304,7 +306,7 @@ while( my $line = $vcf_fh->getline ) {
 
         ## Trim whitespace off column identifiers -- just in case
         @rest = map { s{^\s+}{}; s{\s+$}{}; $_; } @rest;
-        
+
         if( $format_line and scalar( @rest ) > 0 ) {
             for( my $i = 0; $i <= $#rest; ++$i ) {
                 $vcf_tumor_idx = $i if( $rest[$i] eq $vcf_tumor_id );
