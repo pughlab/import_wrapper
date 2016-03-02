@@ -351,8 +351,10 @@ sub import_vcf_file {
   $temp_fh->close();
   unlink($temp_filename);
 
+  my $script_path = File::Spec->rel2abs($cfg->{vcf2maf}, $FindBin::Bin);
+
   my $command = {
-    script => $cfg->{vcf2maf},
+    script => $script_path,
     output => $temp_filename,
     patient => $patient,
     sample => $tumour,
