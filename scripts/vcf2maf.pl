@@ -192,7 +192,7 @@ GetOptions(
     'vep-forks=s' => \$vep_forks,
     'vep-dir-plugins=s' => \$vep_dir_plugins,
     'vep-check-ref!' => \$vep_check_ref,
-    'vep-buffer_size=s' => \$vep_buffer_size,
+    'vep-buffer-size=s' => \$vep_buffer_size,
     'ref-fasta=s' => \$ref_fasta,
     'species=s' => \$species,
     'ncbi-build=s' => \$ncbi_build,

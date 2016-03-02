@@ -372,6 +372,7 @@ sub import_vcf_file {
       '--vep-data', $cfg->{vep_data},
       '--vep-forks', $cfg->{vep_forks},
       '--ref-fasta', $cfg->{ref_fasta},
+      '--vep-buffer-size', $cfg->{vep_buffer_size},
       '--output-maf', $temp_filename,
     ]
   };

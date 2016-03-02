@@ -4,6 +4,7 @@ vcf2maf: 'scripts/vcf2maf.pl'
 vep_path: '/mnt/work1/software/vep/83'
 vep_data: '/mnt/work1/data/commondata/ensembl/vep/83'
 vep_forks: 4
+vep_buffer_size: 1000
 vep_dir_plugins: '/mnt/work1/data/commondata/ensembl/vep/83/Plugins'
 ref_fasta: '/mnt/work1/data/commondata/ensembl/vep/83/homo_sapiens/83_GRCh37'
 no_vep_check_ref: false
