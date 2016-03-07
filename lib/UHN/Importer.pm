@@ -10,6 +10,7 @@ use File::Temp qw/ tempfile tempdir /;
 
 use Parallel::ForkManager;
 
+use VCF;
 use UHN::BuildCommands;
 use UHN::Samples;
 
@@ -324,6 +325,8 @@ sub write_extended_mutations_data {
 
 sub import_vcf_file {
   my ($cfg, $base, $path, $source, $options) = @_;
+
+  VCF->validate($path);
 
   $cfg->{_vcf_count} //= 1;
 
