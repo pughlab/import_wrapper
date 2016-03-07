@@ -326,7 +326,7 @@ sub write_extended_mutations_data {
 sub import_vcf_file {
   my ($cfg, $base, $path, $source, $options) = @_;
 
-  VCF->validate($path);
+  VCF::validate($path);
 
   $cfg->{_vcf_count} //= 1;
 
