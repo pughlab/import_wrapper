@@ -78,8 +78,8 @@ sub GetEffectPriority {
         'intergenic_region' => 19, # snpEff-specific effect that should really be intergenic_variant
         '' => 20
     );
-    $effectPriority{$effect} or die "ERROR: Unrecognized effect \"$effect\". Please update your hashes!\n";
-    return $effectPriority{$effect};
+    $effectPriority{$effect} or warn "WARN: Unrecognized effect \"$effect\". Please update your hashes!\n";
+    return $effectPriority{$effect} // 9;
 }
 
 # Prioritize the transcript biotypes that variants are annotated to, based on disease significance:
