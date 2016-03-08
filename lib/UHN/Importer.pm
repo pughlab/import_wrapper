@@ -315,8 +315,8 @@ sub write_clinical_data {
     @record{@header_names} = map { defined($case) ? $case->{$_} : ""; } @header_names;
     $record{PATIENT_ID} = $patient;
     $record{SAMPLE_ID} = $sample;
-    $record{OS_STATUS} = 'LIVING' if (exists($record{OS_STATUS}) && $record{OS_STATUS} eq 'ALIVE');
-    $record{OS_STATUS} = 'DECEASED' if (exists($record{OS_STATUS}) && $record{OS_STATUS} eq 'DEAD');
+    $record{OS_STATUS} = 'LIVING' if (defined($record{OS_STATUS}) && $record{OS_STATUS} eq 'ALIVE');
+    $record{OS_STATUS} = 'DECEASED' if (defined($record{OS_STATUS}) && $record{OS_STATUS} eq 'DEAD');
     my @values = map { $record{$_}; } @header_names;
     $output_fh->print(join("\t", @values) . "\n");
   }
