@@ -56,12 +56,6 @@ clinical:
   profile_name: 'Clinical data'
   profile_description: 'Clinical data'
 
-mapping:
-  sample_matcher: 'GENIE-UHN-(\d+)-\w+'
-  patient_pattern: '"GENIE-UHN-".("0"x(6 - length($1))).$1'
-  tumour_sample: 0
-  normal_sample: 1
-
 case_lists:
   all:
     name: 'All Tumors'

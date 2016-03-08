@@ -9,7 +9,7 @@ use Config::Any;
 use Hash::Merge::Simple qw/merge/;
 use File::Temp;
 use File::Spec;
-use File::Path qw(make_path);
+use File::Path qw(make_path remove_tree);
 
 use UHN::Importer;
 
@@ -28,12 +28,14 @@ my $logger = get_logger();
 
 my $config = 'import.yml';
 my $output = 'out';
+my $overwrite;
 my $help;
 
 GetOptions(
   'help|?' => \$help,
   'config=s' => \$config,
   'output=s' => \$output,
+  'overwrite!' => \$overwrite,
 ) or die("Error in command line arguments\n");
 
 if (! -e $config) {
@@ -55,6 +57,9 @@ $cfg->{LOGGER} = $logger;
 $cfg->{TEMP_DIRECTORY} = File::Spec->tmpdir();
 
 $output = File::Spec->rel2abs($output);
+if (-d $output && $overwrite) {
+  remove_tree($output);
+}
 if (! -d $output) {
   make_path($output);
 }
