@@ -92,9 +92,9 @@ sub build_import {
   $clinical_meta{profile_description} =              $cfg->{clinical}->{profile_description};
   $clinical_meta{profile_name} =                     $cfg->{clinical}->{profile_name};
 
-  write_meta_file($study_meta_file, \%study_meta) if ($overwrite || ! -e $study_meta_file);
-  write_meta_file($mutations_meta_file, \%mutations_meta) if ($overwrite || ! -e $mutations_meta_file);
-  write_meta_file($clinical_meta_file, \%clinical_meta) if ($overwrite || ! -e $clinical_meta_file);
+  write_meta_file($cfg, $study_meta_file, \%study_meta) if ($overwrite || ! -e $study_meta_file);
+  write_meta_file($cfg, $mutations_meta_file, \%mutations_meta) if ($overwrite || ! -e $mutations_meta_file);
+  write_meta_file($cfg, $clinical_meta_file, \%clinical_meta) if ($overwrite || ! -e $clinical_meta_file);
 
   ## Now generate the case lists...
   my $case_lists = $cfg->{case_lists};
@@ -110,15 +110,15 @@ sub build_import {
     $case_list{case_list_ids} =                    join("\t", get_case_list_samples($cfg, $case_list_key, $commands));
 
     ## Case lists are essentially the same syntactically
-    write_meta_file($case_list_file, \%case_list) if ($overwrite || ! -e $case_list_file);
+    write_meta_file($cfg, $case_list_file, \%case_list) if ($overwrite || ! -e $case_list_file);
   }
 
   ## Do the mutations last as annotation takes a while...
   if ($overwrite || ! -e $mutations_data_file) {
-    execute_commands($cfg, $commands);
-    $cfg->{LOGGER}->info("Merging MAF files into: $mutations_data_file");
-    my @mafs = map { $_->{output} } (@$commands);
-    write_extended_mutations_data($cfg, $mutations_data_file, @mafs);
+    if (! $cfg->{_dry_run}) {
+      execute_commands($cfg, $commands);
+      write_extended_mutations_data($cfg, $mutations_data_file, $commands);
+    }
   }
 }
 
@@ -242,6 +242,7 @@ sub build_commands {
 
 sub execute_commands {
   my ($cfg, $commands) = @_;
+  return if ($cfg->{_dry_run});
 
   my $pm = new Parallel::ForkManager($cfg->{max_processes});
   foreach my $command (@$commands) {
@@ -265,6 +266,8 @@ sub execute_commands {
 
 sub write_clinical_data {
   my ($cfg, $output, $commands, $cases) = @_;
+
+  $output = "/dev/null" if ($cfg->{_dry_run});
 
   my @headers = @{$cfg->{clinical_attributes}};
   push @headers, @{$cfg->{additional_clinical_attributes}};
@@ -301,7 +304,11 @@ sub write_clinical_data {
 }
 
 sub write_extended_mutations_data {
-  my ($cfg, $output, @mafs) = @_;
+  my ($cfg, $output, $commands) = @_;
+  return if ($cfg->{_dry_run});
+
+  $cfg->{LOGGER}->info("Merging MAF files into: $output");
+  my @mafs = map { $_->{output} } (@$commands);
 
   my $maf_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
 
@@ -386,7 +393,8 @@ sub import_vcf_file {
 }
 
 sub write_meta_file {
-  my ($file, $data) =  @_;
+  my ($cfg, $file, $data) =  @_;
+  $file = "/dev/null" if ($cfg->{_dry_run});
   open(my $fh, ">", $file) || croak("Can't open file: $file: $!");
   foreach my $key (sort keys %$data) {
     print $fh "$key: $data->{$key}\n";

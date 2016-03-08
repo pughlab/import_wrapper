@@ -29,6 +29,7 @@ my $logger = get_logger();
 my $config = 'import.yml';
 my $output = 'out';
 my $overwrite;
+my $dry_run;
 my $help;
 
 GetOptions(
@@ -36,6 +37,7 @@ GetOptions(
   'config=s' => \$config,
   'output=s' => \$output,
   'overwrite!' => \$overwrite,
+  'dry-run!' => \$dry_run,
 ) or die("Error in command line arguments\n");
 
 if (! -e $config) {
@@ -55,15 +57,16 @@ $cfg = Hash::Merge::Simple->merge(@hashes);
 $cfg->{PERL_EXECUTABLE} = $^X;
 $cfg->{LOGGER} = $logger;
 $cfg->{TEMP_DIRECTORY} = File::Spec->tmpdir();
+$cfg->{_dry_run} = $dry_run;
 
 $output = File::Spec->rel2abs($output);
-if (-d $output && $overwrite) {
+if (-d $output && $overwrite && ! $dry_run) {
   remove_tree($output);
 }
-if (! -d $output) {
+if (! -d $output && ! $dry_run) {
   make_path($output);
 }
-if (! -d "$output/case_lists") {
+if (! -d "$output/case_lists" && ! $dry_run) {
   make_path("$output/case_lists");
 }
 
