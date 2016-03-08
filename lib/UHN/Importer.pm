@@ -198,6 +198,16 @@ sub copy_hash {
 sub read_clinical_data {
   my ($cfg, $cases, $commands) = @_;
 
+  ## Handle with care. The clinical data file might well be indexed only by
+  ## patient identifiers, in which case it applies to all samples.
+
+  my %patient_samples = ();
+  foreach my $command (@$commands) {
+    my $patient = $command->{patient};
+    my $sample = $command->{sample};
+    push @{$patient_samples{$patient}}, $sample;
+  }
+
   if ($cfg->{clinical_file}) {
     my $clinical_data = $cfg->{clinical_file};
     my $csv = Text::CSV->new({binary => 1}) or die "Cannot use CSV: ".Text::CSV->error_diag();
@@ -207,7 +217,16 @@ sub read_clinical_data {
     while (my $row = $csv->getline($fh)) {
       my %record = ();
       @record{@$headers} = @$row;
-      copy_hash($cases->{$record{SAMPLE_ID}}, \%record);
+      if (exists($record{SAMPLE_ID})) {
+        copy_hash($cases->{$record{SAMPLE_ID}}, \%record);
+      } elsif (exists($record{PATIENT_ID})) {
+        my $samples = $patient_samples{$record{PATIENT_ID}};
+        foreach my $sample_id (@$samples) {
+          copy_hash($cases->{$sample_id}, \%record);
+        }
+      } else {
+        croak("Clinical file record has neither a patient nor a sample identifier");
+      }
     }
     $cfg->{_clinical_file} = 1;
   } else {
