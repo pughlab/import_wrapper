@@ -10,9 +10,9 @@ use File::Temp qw/ tempfile tempdir /;
 
 use Parallel::ForkManager;
 
-use VCF;
 use UHN::BuildCommands;
-use UHN::Samples;
+use UHN::Commands::VCF;
+use UHN::Commands::SEG;
 
 use Log::Log4perl;
 my $log = Log::Log4perl->get_logger('UHN::Importer');
@@ -77,7 +77,7 @@ sub build_import {
   $study_meta{dedicated_color} =                     $cfg->{cancer_study}->{dedicated_color};
 
   my %mutations_meta = %core_meta;
-  $mutations_meta{stable_id} =                       $mutations_meta{cancer_study_identifier}."_mutations";
+  $mutations_meta{stable_id} =                       "mutations";
   $mutations_meta{genetic_alteration_type} =         $cfg->{mutations}->{genetic_alteration_type};
   $mutations_meta{datatype} =                        $cfg->{mutations}->{datatype};
   $mutations_meta{show_profile_in_analysis_tab} =    $cfg->{mutations}->{show_profile_in_analysis_tab};
@@ -85,7 +85,7 @@ sub build_import {
   $mutations_meta{profile_name} =                    $cfg->{mutations}->{profile_name};
 
   my %clinical_meta = %core_meta;
-  $clinical_meta{stable_id} =                        $clinical_meta{cancer_study_identifier}."_clinical";
+  $clinical_meta{stable_id} =                        "clinical";
   $clinical_meta{genetic_alteration_type} =          $cfg->{clinical}->{genetic_alteration_type};
   $clinical_meta{datatype} =                         $cfg->{clinical}->{datatype};
   $clinical_meta{show_profile_in_analysis_tab} =     $cfg->{clinical}->{show_profile_in_analysis_tab};
@@ -97,14 +97,18 @@ sub build_import {
   write_meta_file($cfg, $clinical_meta_file, \%clinical_meta) if ($overwrite || ! -e $clinical_meta_file);
 
   ## Now generate the case lists...
+  if (! exists($cfg->{case_lists})) {
+    die("No case lists defined in configuration file");
+  }
   my $case_lists = $cfg->{case_lists};
+
   my @case_list_keys = keys %$case_lists;
   foreach my $case_list_key (@case_list_keys) {
     my $case_list_file = File::Spec->catfile($cfg->{OUTPUT}, "case_lists/cases_$case_list_key.txt");
 
     my %case_list = ();
     $case_list{cancer_study_identifier} =          $core_meta{cancer_study_identifier};
-    $case_list{stable_id} =                        $case_list{cancer_study_identifier} . "_$case_list_key";
+    $case_list{stable_id} =                        "$case_list_key";
     $case_list{case_list_name} =                   $cfg->{case_lists}->{$case_list_key}->{name};
     $case_list{case_list_description} =            $cfg->{case_lists}->{$case_list_key}->{description};
     $case_list{case_list_ids} =                    join("\t", get_case_list_samples($cfg, $case_list_key, $commands));
@@ -112,6 +116,8 @@ sub build_import {
     ## Case lists are essentially the same syntactically
     write_meta_file($cfg, $case_list_file, \%case_list) if ($overwrite || ! -e $case_list_file);
   }
+
+  $DB::single = 1;
 
   ## Do the mutations last as annotation takes a while...
   if ($overwrite || ! -e $mutations_data_file) {
@@ -241,39 +247,24 @@ sub read_clinical_data {
   }
 }
 
-sub build_commands {
-  my ($cfg, $commands) = @_;
-
-  $#$commands = -1;
-
-  my $sources = $cfg->{sources};
-  my @source_keys = keys %$sources;
-  foreach my $source_key (@source_keys) {
-    my $directory = $sources->{$source_key}->{directory} // croak("Missing directory configuration for source: $source_key");
-    my $pattern = $sources->{$source_key}->{pattern} // $sources->{pattern} // $cfg->{source_pattern};
-    my $origin = $sources->{$source_key}->{origin} // croak("Missing origin for source: $source_key");
-    my @source_commands = UHN::BuildCommands::scan_paths($cfg, \&import_vcf_file, $pattern, $directory, $source_key, {type => $origin, source => $source_key});
-    push @$commands, @source_commands;
-  }
-
-  return $commands;
-}
-
 sub execute_commands {
   my ($cfg, $commands) = @_;
   return if ($cfg->{_dry_run});
 
   my $pm = new Parallel::ForkManager($cfg->{max_processes});
   foreach my $command (@$commands) {
+    next if ($command->{executed});
     my @args = ($command->{script}, @{$command->{arguments}});
 
     my $pid = $pm->start and next;
     $cfg->{LOGGER}->info("Processing file $command->{index}: $command->{description}");
     $cfg->{LOGGER}->info("Executing: " . join(" ", @args));
 
+    $command->{executed} = 1;
+
     system(@args) == 0 or do {
-      $cfg->{LOGGER}->error("Command failed: $?");
-      croak($?);
+      $cfg->{LOGGER}->error("Command failed $command->{index}: status: $?");
+      die($?);
     };
     $cfg->{LOGGER}->info("Command completed: $command->{index}: $command->{description}");
     $pm->finish;
@@ -326,8 +317,8 @@ sub write_extended_mutations_data {
   my ($cfg, $output, $commands) = @_;
   return if ($cfg->{_dry_run});
 
-  $cfg->{LOGGER}->info("Merging MAF files into: $output");
-  my @mafs = map { $_->{output} } (@$commands);
+  $cfg->{LOGGER}->info("Merging mutations MAF files into: $output");
+  my @mafs = map { ($_->{output_type} eq 'mutations') ? ($_->{output}) : () } (@$commands);
 
   my $maf_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
 
@@ -336,7 +327,7 @@ sub write_extended_mutations_data {
   $maf_fh->print($header1 . $header2); # Print MAF header
 
   foreach my $maf (@mafs) {
-    $cfg->{LOGGER}->info("Reading generated MAF: $maf");
+    $cfg->{LOGGER}->info("Reading generated mutations data: $maf");
     my $input_fh = IO::File->new($maf, "<") or carp "ERROR: Couldn't open input file: $maf!\n";
     while(<$input_fh>) {
       next if $_ eq $header1;
@@ -349,68 +340,6 @@ sub write_extended_mutations_data {
   $maf_fh->close();
 }
 
-sub import_vcf_file {
-  my ($cfg, $base, $path, $source, $options) = @_;
-
-  VCF::validate($path);
-
-  $cfg->{_vcf_count} //= 1;
-
-  my ($tumour, $normal) = UHN::Samples::get_sample_identifiers($cfg, $source, $path);
-  if (! $tumour || ! $normal) {
-    $cfg->{LOGGER}->error("Can't extract tumour/normal sample identifiers from: $path");
-    croak("Can't extract tumour/normal sample identifiers from: $path");
-  }
-
-  my $sources = $cfg->{sources};
-  my $tumour_sample_matcher = $sources->{$source}->{sample_matcher} // $sources->{sample_matcher} // $cfg->{tumour_sample_matcher};
-  my $tumour_patient_generator = $sources->{$source}->{patient_generator} // $sources->{patient_generator} // $cfg->{tumour_patient_generator};
-
-  my $patient = $tumour;
-  if ($patient =~ s{$tumour_sample_matcher}{$tumour_patient_generator}ee) {
-    ## Good to go
-  } else {
-    die("Can't match sample pattern: " . $tumour_sample_matcher . ", original: " . $patient);
-  }
-
-  ## Make a temporary file place, but we need to track this, because we
-  ## are going to need this file...
-
-  my $directory = "$cfg->{TEMP_DIRECTORY}";
-  my ($temp_fh, $temp_filename) = tempfile( "import_vcf_XXXXXXXXX", SUFFIX => '.maf', DIR => $directory);
-  $temp_fh->close();
-  unlink($temp_filename);
-
-  my $script_path = File::Spec->rel2abs($cfg->{vcf2maf}, $FindBin::Bin);
-
-  my $command = {
-    script => $script_path,
-    output => $temp_filename,
-    patient => $patient,
-    sample => $tumour,
-    index => $cfg->{_vcf_count}++,
-    description => "vcf2maf for $patient $tumour $path",
-    options => $options,
-    arguments => [
-      '--input-vcf', $path,
-      '--tumor-id', $tumour,
-      '--normal-id', $normal,
-      '--vcf-tumor-id', $tumour,
-      '--vcf-normal-id', $normal,
-      '--vep-path', $cfg->{vep_path},
-      '--vep-data', $cfg->{vep_data},
-      '--vep-forks', $cfg->{vep_forks},
-      '--ref-fasta', $cfg->{ref_fasta},
-      '--vep-buffer-size', $cfg->{vep_buffer_size},
-      '--output-maf', $temp_filename,
-    ]
-  };
-
-  push @{$command->{arguments}}, '--no-vep-check-ref' if ($cfg->{no_vep_check_ref});
-
-  return $command;
-}
-
 sub write_meta_file {
   my ($cfg, $file, $data) =  @_;
   $file = "/dev/null" if ($cfg->{_dry_run});
@@ -419,6 +348,35 @@ sub write_meta_file {
     print $fh "$key: $data->{$key}\n";
   }
   close($fh);
+}
+
+my $source_functions = {
+  vcf => \&UHN::Commands::VCF::import_file,
+  seg => \&UHN::Commands::SEG::import_file
+};
+
+sub get_source_function {
+  my ($source_key, $source) = @_;
+  my $identifier_source = $source->{format} // 'vcf';
+  return $source_functions->{$identifier_source} // die("Missing origin for source: $source_key");
+}
+
+sub build_commands {
+  my ($cfg, $commands) = @_;
+
+  $#$commands = -1;
+
+  my $sources = $cfg->{sources};
+  my @source_keys = keys %$sources;
+  foreach my $source_key (@source_keys) {
+    my $directory = $sources->{$source_key}->{directory} // croak("Missing directory configuration for source: $source_key");
+    my $pattern = $sources->{$source_key}->{pattern} // $sources->{pattern} // $cfg->{source_pattern};
+    my $handler = get_source_function($source_key, $sources->{$source_key});
+    my @source_commands = UHN::BuildCommands::scan_paths($cfg, $handler, $pattern, $directory, $sources->{$source_key}, {source => $source_key});
+    push @$commands, @source_commands;
+  }
+
+  return $commands;
 }
 
 1;

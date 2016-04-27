@@ -1,4 +1,4 @@
-package UHN::Samples;
+package UHN::Samples::VCF;
 
 use strict;
 use warnings;
@@ -6,7 +6,7 @@ use warnings;
 use Carp;
 
 use Log::Log4perl;
-my $log = Log::Log4perl->get_logger('UHN::Samples');
+my $log = Log::Log4perl->get_logger('UHN::Samples::VCF');
 
 ## A small module that, given a Vcf, finds the samples as tumour, normal.
 ## This is from the "#CHROM header" line, and is essentially the

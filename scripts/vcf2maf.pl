@@ -174,7 +174,7 @@ unless( @ARGV and $ARGV[0] =~ m/^-/ ) {
 }
 
 # Parse options and print usage if there is a syntax error, or if usage was explicitly requested
-my ( $man, $help, $vep_check_ref, $vep_buffer_size ) = ( 0, 0, 1, 2000 );
+my ( $man, $help, $vep_check_ref, $vep_buffer_size, $vep_extra_options ) = ( 0, 0, 1, 2000, '' );
 my ( $input_vcf, $output_maf, $custom_enst_file );
 my ( $vcf_tumor_id, $vcf_normal_id );
 GetOptions(
@@ -197,7 +197,8 @@ GetOptions(
     'species=s' => \$species,
     'ncbi-build=s' => \$ncbi_build,
     'maf-center=s' => \$maf_center,
-    'min-hom-vaf=s' => \$min_hom_vaf
+    'min-hom-vaf=s' => \$min_hom_vaf,
+    'vep-extra-options=s' => \$vep_extra_options
 ) or pod2usage( -verbose => 1, -input => \*DATA, -exitval => 2 );
 pod2usage( -verbose => 1, -input => \*DATA, -exitval => 0 ) if( $help );
 pod2usage( -verbose => 2, -input => \*DATA, -exitval => 0 ) if( $man );
@@ -231,7 +232,7 @@ if( $input_vcf ) {
         ( -s $ref_fasta ) or die "ERROR: Reference FASTA not found: $ref_fasta\n";
 
         # Contruct VEP command using some default options and run it
-        my $vep_cmd = "$perl_bin $vep_path/variant_effect_predictor.pl --species $species --assembly $ncbi_build --offline --merged --no_progress --no_stats --sift b --ccds --uniprot --hgvs --symbol --numbers --domains --gene_phenotype --regulatory --canonical --protein --biotype --uniprot --tsl --pubmed --variant_class --shift_hgvs 1 --check_existing --check_alleles --total_length --allele_number --no_escape --xref_refseq --failed 1 --vcf --minimal --flag_pick_allele --pick_order canonical,tsl,biotype,rank,ccds,length --dir $vep_data --fasta $ref_fasta --input_file $input_vcf --output_file $output_vcf";
+        my $vep_cmd = "$perl_bin $vep_path/variant_effect_predictor.pl --species $species --assembly $ncbi_build $vep_extra_options --offline --no_progress --no_stats --sift b --ccds --uniprot --hgvs --symbol --numbers --domains --gene_phenotype --regulatory --canonical --protein --biotype --uniprot --tsl --pubmed --variant_class --shift_hgvs 1 --check_existing --check_alleles --total_length --allele_number --no_escape --xref_refseq --failed 1 --vcf --minimal --flag_pick_allele --pick_order canonical,tsl,biotype,rank,ccds,length --dir $vep_data --fasta $ref_fasta --input_file $input_vcf --output_file $output_vcf";
         $vep_cmd .= " --fork $vep_forks" if( $vep_forks > 1 ); # VEP barks if it's set to 1
         $vep_cmd .= " --buffer_size $vep_buffer_size" if( defined($vep_buffer_size));
         $vep_cmd .= " --dir_plugins $vep_dir_plugins" if ($vep_dir_plugins);

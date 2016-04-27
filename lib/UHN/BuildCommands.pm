@@ -26,6 +26,7 @@ sub scan_paths {
   my $caller = sub {
     my $file = $File::Find::name;
     $cfg->{LOGGER}->info("Scanning $file");
+    $DB::single = 1;
     return if (! -f $file);
     return if (defined($pattern) && $file !~ $pattern);
     $cfg->{LOGGER}->info("Processing $file");
