@@ -108,7 +108,7 @@ sub build_import {
 
     my %case_list = ();
     $case_list{cancer_study_identifier} =          $core_meta{cancer_study_identifier};
-    $case_list{stable_id} =                        "$case_list_key";
+    $case_list{stable_id} =                        "$case_list{cancer_study_identifier}_$case_list_key";
     $case_list{case_list_name} =                   $cfg->{case_lists}->{$case_list_key}->{name};
     $case_list{case_list_description} =            $cfg->{case_lists}->{$case_list_key}->{description};
     $case_list{case_list_ids} =                    join("\t", get_case_list_samples($cfg, $case_list_key, $commands));
