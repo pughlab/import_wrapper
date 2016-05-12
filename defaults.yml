@@ -51,7 +51,7 @@ mutations:
 
 clinical:
   genetic_alteration_type: 'CLINICAL'
-  datatype: ';:FREE-FORM'
+  datatype: 'MIXED_ATTRIBUTES'
   show_profile_in_analysis_tab: true
   profile_name: 'Clinical data'
   profile_description: 'Clinical data'
