@@ -72,7 +72,8 @@ if (! -d "$output/case_lists" && ! $dry_run) {
 
 $cfg->{OUTPUT} = $output;
 
-UHN::Importer::build_import($cfg);
+my $importer = UHN::Importer->new($cfg);
+$importer->run();
 
 pod2usage(1) if $help;
 
