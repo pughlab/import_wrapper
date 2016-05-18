@@ -193,6 +193,7 @@ sub finish {
       $self->write_extended_mutations_data($importer, $mutations_data_file, $commands);
     }
   }
+  $self->write_mutations_meta_file($importer, $commands);
 }
 
 sub write_extended_mutations_data {
@@ -225,6 +226,23 @@ sub write_extended_mutations_data {
     $input_fh->close();
   }
   $maf_fh->close();
+}
+
+sub write_mutations_meta_file {
+  my ($self, $importer, $commands) = @_;
+  my $cfg = $importer->cfg();
+
+  my %meta = ();
+  $meta{cancer_study_identifier} =             $cfg->{cancer_study}->{identifier};
+  $meta{stable_id} =                       $meta{cancer_study_identifier}."_mutations";
+  $meta{genetic_alteration_type} =         $cfg->{mutations}->{genetic_alteration_type};
+  $meta{datatype} =                        $cfg->{mutations}->{datatype};
+  $meta{show_profile_in_analysis_tab} =    $cfg->{mutations}->{show_profile_in_analysis_tab};
+  $meta{profile_description} =             $cfg->{mutations}->{profile_description};
+  $meta{profile_name} =                    $cfg->{mutations}->{profile_name};
+
+  my $mutations_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_mutations_extended.txt");
+  $importer->write_meta_file($mutations_meta_file, \%meta);
 }
 
 package UHN::Importer::Command::VCF;
