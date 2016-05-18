@@ -50,6 +50,14 @@ mutations:
   profile_name: 'Mutations'
   profile_description: 'Mutations'
 
+segment:
+  genetic_alteration_type: 'SEGMENT'
+  datatype: 'SEGMENT'
+  show_profile_in_analysis_tab: true
+  profile_name: 'Segment data values'
+  description: 'Segment data'
+  reference_genome_id: 'hg19'
+
 clinical:
   genetic_alteration_type: 'CLINICAL'
   datatype: 'MIXED_ATTRIBUTES'
