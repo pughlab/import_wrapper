@@ -39,9 +39,10 @@ sub run {
   $self->build_commands($commands);
   $self->add_case_data($cases, $commands);
   $self->read_clinical_data($cases, $commands);
-  $self->write_clinical_data($cases, $commands);
+
   $self->write_study_meta_file();
-  $self->write_clinical_meta_file();
+  $self->write_clinical_patient_data($cases, $commands);
+  $self->write_clinical_sample_data($cases, $commands);
   $self->execute_commands($commands);
 
   foreach my $plugin (@{$self->plugins()}) {
@@ -111,50 +112,65 @@ sub write_study_meta_file {
   $self->write_meta_file($study_meta_file, \%meta);
 }
 
-sub write_clinical_meta_file {
-  my ($self) = @_;
-  my $cfg = $self->cfg();
-  my %meta = ();
-  $meta{cancer_study_identifier} =          $cfg->{cancer_study}->{identifier};
-  $meta{stable_id} =                        "clinical";
-  $meta{genetic_alteration_type} =          $cfg->{clinical}->{genetic_alteration_type};
-  $meta{datatype} =                         $cfg->{clinical}->{datatype};
-  $meta{show_profile_in_analysis_tab} =     $cfg->{clinical}->{show_profile_in_analysis_tab};
-  $meta{profile_description} =              $cfg->{clinical}->{profile_description};
-  $meta{profile_name} =                     $cfg->{clinical}->{profile_name};
-
-  my $clinical_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_clinical.txt");
-  $self->write_meta_file($clinical_meta_file, \%meta);
-}
-
-sub write_clinical_data {
+sub write_clinical_patient_data {
   my ($self, $cases, $commands) = @_;
   my $cfg = $self->cfg();
 
-  my $clinical_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_clinical.txt");
+  my $clinical_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_clinical_patients.txt");
+  my $clinical_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_clinical_patients.txt");
 
   if ($cfg->{overwrite} || ! -e $clinical_data_file) {
-    $self->write_clinical_data_file($clinical_data_file, $commands, $cases);
+    my $columns = $self->write_clinical_patient_data_file($clinical_data_file, $cases, $commands);
+    if ($columns > 1) {
+
+      ## Weird issues with cBio, zero patient attributes is actually an error. So we don't generate
+      ## a meta file and remove the data file.
+
+      my %meta = ();
+      $meta{cancer_study_identifier} =          $cfg->{cancer_study}->{identifier};
+      $meta{genetic_alteration_type} =          $cfg->{clinical}->{genetic_alteration_type};
+      $meta{datatype} =                         "PATIENT_ATTRIBUTES";
+      $meta{data_filename} =                    $clinical_data_file;
+
+      $self->write_meta_file($clinical_meta_file, \%meta);
+    } else {
+      unlink($clinical_data_file);
+    }
   }
 }
 
-sub write_meta_file {
-  my ($self, $output, $data) = @_;
+sub write_clinical_sample_data {
+  my ($self, $cases, $commands) = @_;
   my $cfg = $self->cfg();
-  unless ($cfg->{overwrite} || ! -e $output) {
-    return;
-  }
 
-  $output = "/dev/null" if ($cfg->{_dry_run});
-  open(my $fh, ">", $output) || croak("Can't open file: $output: $!");
-  foreach my $key (sort keys %$data) {
-    print $fh "$key: $data->{$key}\n";
+  my $clinical_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_clinical_samples.txt");
+  my $clinical_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_clinical_samples.txt");
+
+  my %meta = ();
+  $meta{cancer_study_identifier} =          $cfg->{cancer_study}->{identifier};
+  $meta{genetic_alteration_type} =          $cfg->{clinical}->{genetic_alteration_type};
+  $meta{datatype} =                         "SAMPLE_ATTRIBUTES";
+  $meta{data_filename} =                    $clinical_data_file;
+
+  $self->write_meta_file($clinical_meta_file, \%meta);
+
+  if ($cfg->{overwrite} || ! -e $clinical_data_file) {
+    $self->write_clinical_sample_data_file($clinical_data_file, $cases, $commands);
   }
-  close($fh);
+}
+
+sub write_clinical_patient_data_file {
+  my ($self, $output, $cases, $commands) = @_;
+  return $self->write_clinical_data_file("PATIENT", $output, $cases, $commands);
+}
+
+sub write_clinical_sample_data_file {
+  my ($self, $output, $cases, $commands) = @_;
+  return $self->write_clinical_data_file("SAMPLE", $output, $cases, $commands);
 }
 
 sub write_clinical_data_file {
-  my ($self, $output, $commands, $cases) = @_;
+  my ($self, $selector, $output, $cases, $commands) = @_;
   my $cfg = $self->cfg();
 
   $output = "/dev/null" if ($cfg->{_dry_run});
@@ -166,10 +182,21 @@ sub write_clinical_data_file {
   $output_fh->print("#" . join("\t", map { $_->{name} } @headers) . "\n");
   $output_fh->print("#" . join("\t", map { $_->{description} } @headers) . "\n");
   $output_fh->print("#" . join("\t", map { $_->{type} } @headers) . "\n");
-  $output_fh->print("#" . join("\t", map { $_->{label} } @headers) . "\n");
   $output_fh->print("#" . join("\t", map { $_->{count} } @headers) . "\n");
 
-  my @header_names = map { $_->{header} } @headers;
+  my @selected_headers = ();
+  foreach my $header (@headers) {
+    if ($selector eq 'SAMPLE' && $header->{name} eq 'PATIENT_ID') {
+      push @selected_headers, $header;
+      next;
+    }
+    if ($header->{label} eq $selector) {
+      push @selected_headers, $header;
+      next;
+    }
+  };
+
+  my @header_names = map { $_->{header}; } @selected_headers;
   $output_fh->print(join("\t", @header_names). "\n");
 
   my %pairs = ();
@@ -191,6 +218,24 @@ sub write_clinical_data_file {
     my @values = map { $record{$_} // ''; } @header_names;
     $output_fh->print(join("\t", @values) . "\n");
   }
+
+  my $columns = @header_names;
+  return $columns;
+}
+
+sub write_meta_file {
+  my ($self, $output, $data) = @_;
+  my $cfg = $self->cfg();
+  unless ($cfg->{overwrite} || ! -e $output) {
+    return;
+  }
+
+  $output = "/dev/null" if ($cfg->{_dry_run});
+  open(my $fh, ">", $output) || croak("Can't open file: $output: $!");
+  foreach my $key (sort keys %$data) {
+    print $fh "$key: $data->{$key}\n";
+  }
+  close($fh);
 }
 
 sub build_commands {
