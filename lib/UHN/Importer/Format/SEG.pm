@@ -72,7 +72,7 @@ sub finish {
       $self->write_segment_data($importer, $segment_data_file, $commands);
     }
   }
-  $self->write_segment_meta_file($importer, $commands);
+  $self->write_segment_meta_file($importer, $segment_data_file, $commands);
 }
 
 my @seg_header = ("ID", "chrom", "loc.start", "loc.end", "num.mark", "seg.mean");
@@ -100,7 +100,11 @@ sub write_segment_data {
     while(<$input_fh>) {
       next if $_ eq $header1;
       carp("Suspicious header: $_") if /^ID/i;
-      $seg_fh->print($_);
+
+      ## Now remove a chr prefix from the second column, if it's there
+      my @entries = split(/\t/, $_);
+      $entries[1] =~ s{^chr(\w+)}{$1};
+      $seg_fh->print(join("\t", @entries));
     }
     $input_fh->close();
   }
@@ -108,7 +112,7 @@ sub write_segment_data {
 }
 
 sub write_segment_meta_file {
-  my ($self, $importer, $commands) = @_;
+  my ($self, $importer, $segment_data_file, $commands) = @_;
   my $cfg = $importer->cfg();
 
   my %meta = ();
@@ -117,8 +121,10 @@ sub write_segment_meta_file {
   $meta{genetic_alteration_type} =         $cfg->{segment}->{genetic_alteration_type};
   $meta{datatype} =                        $cfg->{segment}->{datatype};
   $meta{show_profile_in_analysis_tab} =    $cfg->{segment}->{show_profile_in_analysis_tab};
-  $meta{profile_description} =             $cfg->{segment}->{profile_description};
+  $meta{description} =                     $cfg->{segment}->{description};
   $meta{profile_name} =                    $cfg->{segment}->{profile_name};
+  $meta{reference_genome_id} =             $cfg->{segment}->{reference_genome_id};
+  $meta{data_filename} =                   $segment_data_file;
 
   my $mutations_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_segments.txt");
   $importer->write_meta_file($mutations_meta_file, \%meta);
