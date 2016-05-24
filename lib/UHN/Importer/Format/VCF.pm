@@ -95,6 +95,7 @@ sub _import_file {
   my $script_path = File::Spec->rel2abs($cfg->{vcf2maf}, $FindBin::Bin);
 
   my $command = UHN::Importer::Command::VCF->new();
+  $command->executable($^X);
   $command->script($script_path);
   $command->output($temp_filename);
   $command->output_type('mutations');

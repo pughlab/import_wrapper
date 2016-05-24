@@ -5,6 +5,7 @@ use warnings;
 
 use Moose::Role;
 
+has executable => (is => 'rw');
 has script => (is => 'rw');
 has output => (is => 'rw');
 has output_type => (is => 'rw');
@@ -24,6 +25,9 @@ sub execute {
 
   $self->executed(1);
   my @args = ($self->script(), @{$self->arguments()});
+  if (defined $self->executable()) {
+    unshift(@args, $self->executable());
+  }
 
   system(@args) == 0 or do {
     $importer->logger()->error("Command failed ".$self->index().": status: $?");
