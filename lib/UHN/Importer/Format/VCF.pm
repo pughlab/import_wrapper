@@ -111,6 +111,7 @@ sub _import_file {
     '--vcf-normal-id', $normal,
     '--vep-path', $cfg->{vep_path},
     '--vep-data', $cfg->{vep_data},
+    '--vep-dir-plugins', $cfg->{vep_plugins},
     '--vep-forks', $cfg->{vep_forks},
     '--ref-fasta', $cfg->{ref_fasta},
     '--vep-buffer-size', $cfg->{vep_buffer_size},
