@@ -232,7 +232,7 @@ if( $input_vcf ) {
         ( -s $ref_fasta ) or die "ERROR: Reference FASTA not found: $ref_fasta\n";
 
         # Contruct VEP command using some default options and run it
-        my $vep_cmd = "$perl_bin $vep_path/variant_effect_predictor.pl --species $species --assembly $ncbi_build $vep_extra_options --offline --no_progress --no_stats --sift b --ccds --uniprot --hgvs --symbol --numbers --domains --gene_phenotype --regulatory --canonical --protein --biotype --uniprot --tsl --pubmed --variant_class --shift_hgvs 1 --check_existing --check_alleles --total_length --allele_number --no_escape --xref_refseq --failed 1 --vcf --minimal --flag_pick_allele --pick_order canonical,tsl,biotype,rank,ccds,length --dir_cache $vep_data --dir_plugins $vep_dir_plugins --fasta $ref_fasta --input_file $input_vcf --output_file $output_vcf";
+        my $vep_cmd = "$perl_bin $vep_path/variant_effect_predictor.pl --species $species --assembly $ncbi_build $vep_extra_options --offline --no_progress --no_stats --sift b --ccds --uniprot --hgvs --symbol --numbers --domains --gene_phenotype --regulatory --canonical --protein --biotype --uniprot --tsl --pubmed --variant_class --shift_hgvs 1 --check_existing --check_alleles --total_length --allele_number --no_escape --xref_refseq --failed 1 --vcf --minimal --flag_pick_allele --pick_order canonical,tsl,biotype,rank,ccds,length --dir_cache $vep_data --fasta $ref_fasta --input_file $input_vcf --output_file $output_vcf";
         $vep_cmd .= " --fork $vep_forks" if( $vep_forks > 1 ); # VEP barks if it's set to 1
         $vep_cmd .= " --buffer_size $vep_buffer_size" if( defined($vep_buffer_size));
         $vep_cmd .= " --dir_plugins $vep_dir_plugins" if ($vep_dir_plugins);

@@ -24,7 +24,6 @@ sub scan_paths {
   my @result = ();
   my $caller = sub {
     my $file = $File::Find::name;
-    $importer->logger()->info("Scanning $file");
     return if (! -f $file);
     return if (defined($pattern) && $file !~ $pattern);
     $importer->logger()->info("Processing $file");
