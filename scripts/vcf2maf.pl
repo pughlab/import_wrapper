@@ -667,7 +667,7 @@ while( my $line = $vcf_fh->getline ) {
     # Construct the MAF columns from the $maf_effect hash, and print to output
     %maf_line = map{( $_, ( $maf_effect->{$_} ? $maf_effect->{$_} : '' ))} @maf_header;
     $maf_line{Hugo_Symbol} = $maf_effect->{Transcript_ID} unless( $maf_effect->{Hugo_Symbol} );
-    $maf_line{Entrez_Gene_Id} = '0';
+    $maf_line{Entrez_Gene_Id} = $maf_effect->{Gene} // '0'
     $maf_line{Center} = $maf_center;
     $maf_line{NCBI_Build} = $ncbi_build;
     $maf_line{Chromosome} = $chrom;
