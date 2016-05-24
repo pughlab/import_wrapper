@@ -6,6 +6,7 @@ use warnings;
 use Carp;
 use Parallel::ForkManager;
 use Class::Inspector;
+use Text::CSV;
 
 use Log::Log4perl;
 my $log = Log::Log4perl->get_logger('UHN::Importer');
