@@ -5,8 +5,31 @@ use warnings;
 
 use Carp;
 use Moose;
+use Text::CSV;
+use Set::IntervalTree;
+
+use FindBin qw($Bin);
 
 with 'UHN::Format';
+
+has gene_mapping_table => (
+  is => 'rw'
+);
+
+has gene_name_table => (
+  is => 'rw',
+  default => sub { {} }
+);
+
+has sample_name_table => (
+  is => 'rw',
+  default => sub { {} }
+);
+
+has segment_data => (
+  is => 'rw',
+  default => sub { {} }
+);
 
 use Log::Log4perl;
 my $log = Log::Log4perl->get_logger('UHN::Importer::Format::SEG');
@@ -22,8 +45,43 @@ sub handles_source {
 
 sub scan {
   my ($self, $importer, $pattern, $directory, $source_data, @args) = @_;
+  $self->get_gene_mapping($importer);
   $log->info("Scanning $directory");
   $self->scan_paths($importer, \&_import_file, $pattern, $directory, $source_data, @args)
+}
+
+sub get_gene_mapping {
+  my ($self, $importer) = @_;
+
+  my $table = $self->gene_mapping_table();
+  return $table if (defined $table);
+
+  $log->info("Loading gene mapping table");
+  my $cfg = $importer->cfg();
+  my $gene_mapping_file = $cfg->{gene_mapping_file};
+  $gene_mapping_file = File::Spec->rel2abs($gene_mapping_file, $FindBin::Bin);
+
+  my $csv = Text::CSV->new({binary => 1}) or die "Cannot use CSV: ".Text::CSV->error_diag();
+  open my $fh, "<:encoding(utf8)", $gene_mapping_file or die "$gene_mapping_file: $!";
+
+  my $name_table = $self->gene_name_table();
+  my $headers = $csv->getline($fh);
+
+  $table = {};
+  while (my $row = $csv->getline($fh)) {
+    my ($ensembl, $chrom, $start, $end, $strand, $symbol, $entrez_gene_id) = @$row;
+    $entrez_gene_id = $entrez_gene_id + 0;
+
+    if (! exists($table->{$chrom})) {
+      $table->{$chrom} = Set::IntervalTree->new();
+    }
+
+    $name_table->{$entrez_gene_id} = {chrom => $chrom, strand => $strand, start => $start, end => $end, symbol => $symbol};
+    $table->{$chrom}->insert({ensembl => $ensembl, chrom => $chrom, strand => $strand, start => $start, end => $end, symbol => $symbol, entrez_gene_id => $entrez_gene_id}, $start, $end);
+  }
+
+  $self->gene_mapping_table($table);
+  return $table;
 }
 
 sub _import_file {
@@ -73,6 +131,9 @@ sub finish {
     }
   }
   $self->write_segment_meta_file($importer, $segment_data_file, $commands);
+
+  $self->write_cnv_data($importer);
+  $self->write_cnv_meta_file($importer);
 }
 
 my @seg_header = ("ID", "chrom", "loc.start", "loc.end", "num.mark", "seg.mean");
@@ -87,7 +148,6 @@ sub write_segment_data {
 
   $log->info("Merging SEG files into: $output");
   my @segs = map { ($_->isa('UHN::Importer::Command::SEG')) ? ($_->output()) : () } (@$commands);
-  $DB::single = 1;
 
   my $seg_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
 
@@ -102,13 +162,90 @@ sub write_segment_data {
       carp("Suspicious header: $_") if /^ID/i;
 
       ## Now remove a chr prefix from the second column, if it's there
+      chomp;
       my @entries = split(/\t/, $_);
       $entries[1] =~ s{^chr(\w+)}{$1};
+      $self->add_segment($importer, @entries);
+
       $seg_fh->print(join("\t", @entries));
     }
     $input_fh->close();
   }
   $seg_fh->close();
+}
+
+sub add_segment {
+  my ($self, $importer, @entries) = @_;
+  my $gene_mapping_table = $self->get_gene_mapping($importer);
+  my $segment_data = $self->segment_data();
+  my $sample_name_table = $self->sample_name_table();
+
+  my ($sample, $chrom, $start, $end, $mark, $mean) = @entries;
+  $sample_name_table->{$sample} = 1;
+
+  my $set = $gene_mapping_table->{$chrom};
+
+  my $genes = $set->fetch($start, $end);
+  foreach my $gene (@$genes) {
+    my $entrez_gene_id = $gene->{entrez_gene_id};
+    push @{$segment_data->{$entrez_gene_id}->{$sample}}, [$start, $end, $mean];
+  }
+}
+
+sub write_cnv_meta_file {
+  my ($self, $importer) = @_;
+  my $cfg = $importer->cfg();
+
+  my %meta = ();
+  $meta{cancer_study_identifier} =         $cfg->{cancer_study}->{identifier};
+  $meta{stable_id} =                       $meta{cancer_study_identifier}."_cna";
+  $meta{genetic_alteration_type} =         $cfg->{cnv}->{genetic_alteration_type};
+  $meta{datatype} =                        $cfg->{cnv}->{datatype};
+  $meta{show_profile_in_analysis_tab} =    $cfg->{cnv}->{show_profile_in_analysis_tab};
+  $meta{profile_description} =             $cfg->{cnv}->{profile_description};
+  $meta{profile_name} =                    $cfg->{cnv}->{profile_name};
+
+  my $mutations_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_log2cna.txt");
+  $importer->write_meta_file($mutations_meta_file, \%meta);
+}
+
+sub write_cnv_data {
+  my ($self, $importer) = @_;
+  my $cfg = $importer->cfg();
+
+  my $mutations_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_log2cna.txt");
+  open my $fh, ">", $mutations_data_file or die("$mutations_data_file: $!");
+
+  my $segment_data = $self->segment_data();
+
+  my $sample_name_table = $self->sample_name_table();
+  my $gene_name_table = $self->gene_name_table();
+  my @samples = sort keys %$sample_name_table;
+  my @genes = sort { $a <=> $b} keys %$segment_data;
+
+  my @headers = qw(Hugo_Symbol Entrez_Gene_Id);
+  push @headers, @samples;
+  print $fh join("\t", @headers)."\n";
+
+  for my $gene (@genes) {
+    my $gene_name = $gene_name_table->{$gene};
+    my $entries = $segment_data->{$gene};
+    my @results = ();
+    push @results, $gene_name->{symbol}, $gene;
+    for my $sample (@samples) {
+      $DB::single = 1 if (! $entries);
+      if (exists($entries->{$sample})) {
+        my @entries = @{$entries->{$sample}};
+        push @results, $entries[0]->[2];
+      } else {
+        push @results, "";
+      }
+    }
+    print $fh join("\t", @results)."\n";
+  }
+  close($fh);
+
+  return;
 }
 
 sub write_segment_meta_file {

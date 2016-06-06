@@ -6,6 +6,8 @@ vep_data: '/mnt/work1/data/commondata/ensembl/vep/83'
 vep_plugins: '/mnt/work1/data/commondata/ensembl/vep/83/Plugins'
 ref_fasta: '/mnt/work1/data/commondata/ensembl/vep/83/homo_sapiens/83_GRCh37'
 
+gene_mapping_file: 'data/gene_mapping_ensembl_83_38.csv'
+
 vep_forks: 4
 vep_buffer_size: 200
 vep_extra_options: ''
@@ -57,6 +59,14 @@ segment:
   show_profile_in_analysis_tab: true
   profile_name: 'Segment data values'
   description: 'Segment data'
+  reference_genome_id: 'hg19'
+
+cnv:
+  genetic_alteration_type: 'COPY_NUMBER_ALTERATION'
+  datatype: 'DISCRETE'
+  show_profile_in_analysis_tab: true
+  profile_name: 'Copy-number alterations'
+  profile_description: 'Copy-number alterations'
   reference_genome_id: 'hg19'
 
 clinical:
