@@ -167,7 +167,7 @@ sub write_segment_data {
       $entries[1] =~ s{^chr(\w+)}{$1};
       $self->add_segment($importer, @entries);
 
-      $seg_fh->print(join("\t", @entries));
+      $seg_fh->print(join("\t", @entries)."\n");
     }
     $input_fh->close();
   }
