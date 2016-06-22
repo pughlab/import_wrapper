@@ -15,3 +15,7 @@ perl import.pl --config <config.yml> --output <directory>
 ```
 
 Note that the import wrapper doesn't overwrite anything that is already there, so if you have new input data, it's best to remove the output directory to ensure it actually gets processed.
+
+ * [The configuration file](pages/configuration.html)
+ * [Running the wrapper on a cluster](pages/running.html)
+ * [Inside the import wrapper](pages/internals.html)
