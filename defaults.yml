@@ -63,10 +63,10 @@ segment:
 
 cnv:
   genetic_alteration_type: 'COPY_NUMBER_ALTERATION'
-  datatype: 'DISCRETE'
-  show_profile_in_analysis_tab: true
-  profile_name: 'Copy-number alterations'
-  profile_description: 'Copy-number alterations'
+  datatype: 'LOG-VALUE'
+  show_profile_in_analysis_tab: false
+  profile_name: 'Log2 copy-number values'
+  profile_description: 'Log2 copy-number values'
   reference_genome_id: 'hg19'
 
 clinical:

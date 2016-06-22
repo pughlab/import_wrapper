@@ -198,7 +198,7 @@ sub write_cnv_meta_file {
 
   my %meta = ();
   $meta{cancer_study_identifier} =         $cfg->{cancer_study}->{identifier};
-  $meta{stable_id} =                       $meta{cancer_study_identifier}."_cna";
+  $meta{stable_id} =                       $meta{cancer_study_identifier}."_log2CNA";
   $meta{genetic_alteration_type} =         $cfg->{cnv}->{genetic_alteration_type};
   $meta{datatype} =                        $cfg->{cnv}->{datatype};
   $meta{show_profile_in_analysis_tab} =    $cfg->{cnv}->{show_profile_in_analysis_tab};
