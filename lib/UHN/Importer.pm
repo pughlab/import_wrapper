@@ -7,6 +7,8 @@ use Carp;
 use Parallel::ForkManager;
 use Class::Inspector;
 use Text::CSV;
+use File::Spec;
+use File::Path qw(make_path);
 
 use Log::Log4perl;
 my $log = Log::Log4perl->get_logger('UHN::Importer');
@@ -25,12 +27,21 @@ has logger => (
   is => 'rw'
 );
 
+has cache_directory => (
+  is => 'rw'
+);
+
 sub BUILD {
   my ($self, $cfg) = @_;
   $self->logger($log);
   $self->cfg($cfg);
   my $finder = Module::Pluggable::Object->new(search_path => 'UHN::Importer::Format', instantiate => 'new');
   $self->plugins([$finder->plugins()]);
+
+  my $cache_directory = $cfg->{cache_directory} // 'cache';
+  my $directory = File::Spec->rel2abs($cache_directory, File::Spec->curdir());
+  make_path($directory);
+  $self->cache_directory($directory);
 };
 
 sub run {

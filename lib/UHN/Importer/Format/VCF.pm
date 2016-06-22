@@ -121,6 +121,13 @@ sub _import_file {
   ];
   $command->arguments($arguments);
 
+  ## Load up a signature so we can skip if we've seen the file before
+  $command->add_signature_string('VCF');
+  $command->add_signature_string($script_path);
+  $command->add_signature_string($tumour);
+  $command->add_signature_string($normal);
+  $command->add_signature_file($path);
+
   push @{$command->arguments()}, '--no-vep-check-ref' if ($cfg->{no_vep_check_ref});
   push @{$command->arguments()}, '--vep-extra-options', $cfg->{vep_extra_options} if ($cfg->{vep_extra_options});
 
@@ -235,7 +242,7 @@ sub write_mutations_meta_file {
   my $cfg = $importer->cfg();
 
   my %meta = ();
-  $meta{cancer_study_identifier} =             $cfg->{cancer_study}->{identifier};
+  $meta{cancer_study_identifier} =         $cfg->{cancer_study}->{identifier};
   $meta{stable_id} =                       $meta{cancer_study_identifier}."_mutations";
   $meta{genetic_alteration_type} =         $cfg->{mutations}->{genetic_alteration_type};
   $meta{datatype} =                        $cfg->{mutations}->{datatype};
