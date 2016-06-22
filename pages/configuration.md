@@ -69,7 +69,6 @@ These settings include:
  * `max_processes` -- how many files should we process in parallel? (default is 4)
  * `no_vep_check_ref` -- if true, turns off reference cehcking in VEP (false by default)
 
-
 ## Case lists
 
 cBioPortal requires at least one case list file. These define what the samples are
@@ -84,7 +83,7 @@ sources, but you will also typically separate, e.g., samples used for different
 kinds of analysis.
 
 The case lists show up on the main query page, so a user can choose which set
-of samples to analyze. 
+of samples to analyze.
 
 A typical case list definition looks like this:
 
