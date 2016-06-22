@@ -68,3 +68,33 @@ These settings include:
  * `vep_forks` -- how much should we let VEP fork? (default is 4)
  * `max_processes` -- how many files should we process in parallel? (default is 4)
  * `no_vep_check_ref` -- if true, turns off reference cehcking in VEP (false by default)
+
+
+## Case lists
+
+cBioPortal requires at least one case list file. These define what the samples are
+for a given piece of data. The import wrapper actually generates these from sources
+directly, so that you don't need to worry about these things. Essentially, for each
+source, the import wrapper can generate a list of associated samples. The case lists
+allow you to use a union of multiple sources, merging data from several sources if
+you need to.
+
+There should always be an `all` source, merging all the samples from all
+sources, but you will also typically separate, e.g., samples used for different
+kinds of analysis.
+
+The case lists show up on the main query page, so a user can choose which set
+of samples to analyze. 
+
+A typical case list definition looks like this:
+
+```yaml
+case_lists:
+  all:
+    name: 'All'
+    description: 'All exome and targeted'
+    data:
+      union:
+        - 'exome'
+        - 'targeted'
+```
