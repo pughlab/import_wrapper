@@ -27,7 +27,7 @@ EOT
 my $logger = get_logger();
 
 my $config = 'import.yml';
-my $output = 'out';
+my $output = '';
 my $overwrite;
 my $dry_run;
 my $help;
@@ -42,6 +42,11 @@ GetOptions(
 
 if (! -e $config) {
   $logger->error("Can't find config file: $config");
+  exit(1);
+}
+
+if (! $output) {
+  $logger->error("Missing --output argument, please specify an output directory");
   exit(1);
 }
 
