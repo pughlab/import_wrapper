@@ -8,6 +8,10 @@ use Digest::SHA;
 use File::Copy;
 use File::Spec;
 use File::Path qw(make_path);
+use File::Temp qw(tempfile);
+use IO::Compress::Gzip qw(gzip $GzipError);
+use IO::Uncompress::Gunzip qw(gunzip $GunzipError);
+
 
 has executable => (is => 'rw');
 has script => (is => 'rw');
@@ -46,7 +50,7 @@ sub get_signature_path {
   my $cache_directory = $importer->cache_directory();
   my @fragments = ();
   push @fragments, substr($signature, 0, 2);
-  push @fragments, $signature . ".data";
+  push @fragments, $signature . ".data.gz";
   return File::Spec->catdir($cache_directory, @fragments);
 }
 
@@ -57,9 +61,15 @@ sub execute {
   my $signature = $self->get_signature($importer);
   my $cache = $self->get_signature_path($importer, $signature);
   if (-e $cache) {
-    $importer->logger()->info("No need to execute (cache found): " . join(" ", @{$self->arguments()}));
     $self->executed(1);
-    $self->output($cache);
+
+    ## Copy and decompress from the cache
+    my ($fh, $filename) = tempfile();
+    gunzip $cache => $fh or die "gunzip failed: $GunzipError\n";
+    close($fh);
+    $self->output($filename);
+
+    $importer->logger()->info("No need to execute (cache found): " . join(" ", @{$self->arguments()}));
     return;
   }
 
@@ -79,7 +89,10 @@ sub execute {
 
   my (undef, $directories) = File::Spec->splitpath($cache);
   make_path($directories);
-  copy($self->output(), $cache) or die "Copy failed: $!";
+
+  ## Compress the output to the cache
+  $importer->logger()->info("Compressing command output into cache " . $self->output());
+  gzip $self->output(), $cache or die "gzip failed: $GzipError\n";
   $importer->logger()->info("Command completed: ".$self->index().": ".$self->description());
 }
 
