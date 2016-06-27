@@ -230,6 +230,8 @@ sub write_extended_mutations_data {
       next if $_ eq $header1;
       next if $_ eq $header2;
       carp("Suspicious header: $_") if /^Hugo_Symbol/i;
+      my ($symbol, $gene) = split(/\t/);
+      next unless ($symbol && $gene);
       $maf_fh->print($_);
     }
     $input_fh->close();
