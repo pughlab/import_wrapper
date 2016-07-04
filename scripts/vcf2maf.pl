@@ -114,6 +114,7 @@ sub GetBiotypePriority {
         'macro_lncRNA' => 4, # unspliced lncRNAs that are several kb in size
         'Mt_tRNA' => 4, # Non-coding RNA predicted using sequences from RFAM and miRBase
         'Mt_rRNA' => 4, # Non-coding RNA predicted using sequences from RFAM and miRBase
+        'RNase_MRP_RNA' => 4, ### Added by Stuart
         'antisense' => 5, # Has transcripts that overlap the genomic span (i.e. exon or introns) of a protein-coding locus on the opposite strand
         'sense_intronic' => 5, # Long non-coding transcript in introns of a coding gene that does not overlap any exons
         'sense_overlapping' => 5, # Long non-coding transcript that contains a coding gene in its intron on the same strand
