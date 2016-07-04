@@ -69,6 +69,7 @@ sub execute {
     $self->output($filename);
 
     $importer->logger()->info("No need to execute (cache found): " . join(" ", @{$self->arguments()}));
+    $importer->logger()->info("Output file: ".($self->output()).", exists: ".(-e $filename));
     return;
   }
 
