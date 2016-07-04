@@ -4,7 +4,6 @@ use strict;
 use warnings;
 
 use Carp;
-use Parallel::ForkManager;
 use Class::Inspector;
 use Text::CSV;
 use File::Spec;
@@ -32,6 +31,7 @@ has cache_directory => (
 );
 
 with 'UHN::GeneMapping';
+with 'UHN::ExecutionManager';
 
 sub BUILD {
   my ($self, $cfg) = @_;
@@ -90,23 +90,6 @@ sub write_case_lists {
     ## Case lists are essentially the same syntactically
     $self->write_meta_file($case_list_file, \%case_list);
   }
-}
-
-sub execute_commands {
-  my ($self, $commands) = @_;
-  my $cfg = $self->cfg();
-  return if ($cfg->{_dry_run});
-
-  my $pm = new Parallel::ForkManager($cfg->{max_processes});
-  foreach my $command (@$commands) {
-    next if ($command->executed());
-    my $pid = $pm->start and next;
-    $command->execute($self);
-    $pm->finish;
-  }
-  $pm->wait_all_children;
-
-  $log->info("Done all commands");
 }
 
 sub write_study_meta_file {

@@ -54,7 +54,7 @@ sub get_signature_path {
 }
 
 sub execute {
-  my ($self, $importer) = @_;
+  my ($self, $importer, $pm) = @_;
   my $cfg = $importer->cfg();
 
   my $signature = $self->get_signature($importer);
@@ -70,6 +70,8 @@ sub execute {
 
     $importer->logger()->info("No need to execute (cache found): " . join(" ", @{$self->arguments()}));
     $importer->logger()->info("Output file: ".($self->output()).", exists: ".(-e $filename));
+
+    ## Return a non-zero status
     return;
   }
 
@@ -81,6 +83,9 @@ sub execute {
   if (defined $self->executable()) {
     unshift(@args, $self->executable());
   }
+
+  my $pid = $pm->start();
+  return $pid if $pid;
 
   system(@args) == 0 or do {
     $importer->logger()->error("Command failed ".$self->index().": status: $?");
@@ -94,6 +99,8 @@ sub execute {
   $importer->logger()->info("Compressing command output into cache " . $self->output());
   gzip $self->output(), $cache or die "gzip failed: $GzipError\n";
   $importer->logger()->info("Command completed: ".$self->index().": ".$self->description());
+
+  $pm->finish();
 }
 
 1;
