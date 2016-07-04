@@ -10,6 +10,7 @@ use Hash::Merge::Simple qw/merge/;
 use File::Temp;
 use File::Spec;
 use File::Path qw(make_path remove_tree);
+use Pod::Usage;
 
 use UHN::Importer;
 
@@ -39,6 +40,11 @@ GetOptions(
   'overwrite!' => \$overwrite,
   'dry-run!' => \$dry_run,
 ) or die("Error in command line arguments\n");
+
+if ($help) {
+  pod2usage(1);
+  exit(0);
+}
 
 if (! -e $config) {
   $logger->error("Can't find config file: $config");
@@ -80,8 +86,6 @@ $cfg->{OUTPUT} = $output;
 my $importer = UHN::Importer->new($cfg);
 $importer->run();
 
-pod2usage(1) if $help;
-
 1;
 
 __END__
@@ -112,7 +116,14 @@ Loads configuration from the given file.
 
 =item B<--output>
 
-where to write the data for cBioPortal. Defaults to a subdirectory "out"
+where to write the data for cBioPortal. This is now a required
+command line argument, so don't expect it to default to anything
+useful. 
+
+=item B<--overwrite>
+
+Forces the system to overwrite any existing files. By default, the
+import wrapper leaves existing files untouched.
 
 =back
 
