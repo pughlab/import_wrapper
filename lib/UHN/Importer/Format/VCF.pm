@@ -218,7 +218,6 @@ sub write_extended_mutations_data {
 
   $log->info("Merging mutations MAF files into: $output");
   my @outputs = map { ($_->isa('UHN::Importer::Command::VCF')) ? ($_) : () } (@$commands);
-  $DB::single = 1;
 
   my $maf_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
 
@@ -229,7 +228,6 @@ sub write_extended_mutations_data {
   my $ensembl_table = $importer->ensembl_to_refseq_table();
 
   foreach my $output (@outputs) {
-    $DB::single = 1;
     my $maf = $output->output();
     $log->info("Reading generated mutations data: $maf");
     my $input_fh = IO::File->new($maf, "<") or carp "ERROR: Couldn't open input file: $maf!\n";
