@@ -213,6 +213,9 @@ sub write_extended_mutations_data {
 
   return if ($cfg->{_dry_run});
 
+  ## Ensure we have the mapping
+  $importer->get_gene_mapping();
+
   $log->info("Merging mutations MAF files into: $output");
   my @mafs = map { ($_->isa('UHN::Importer::Command::VCF')) ? ($_->output()) : () } (@$commands);
   $DB::single = 1;
@@ -223,6 +226,8 @@ sub write_extended_mutations_data {
   my $header2 = join("\t", @maf_header) . "\n";
   $maf_fh->print($header1 . $header2); # Print MAF header
 
+  my $ensembl_table = $importer->ensembl_to_refseq_table();
+
   foreach my $maf (@mafs) {
     $log->info("Reading generated mutations data: $maf");
     my $input_fh = IO::File->new($maf, "<") or carp "ERROR: Couldn't open input file: $maf!\n";
@@ -230,8 +235,19 @@ sub write_extended_mutations_data {
       next if $_ eq $header1;
       next if $_ eq $header2;
       carp("Suspicious header: $_") if /^Hugo_Symbol/i;
-      my ($symbol, $gene) = split(/\t/);
+      my ($symbol, $gene, $rest) = split(/\t/, $_, 3);
       next unless ($symbol && $gene);
+
+      ## If we're seeing an Ensembl gene identifier, then we can map that using our
+      ## friendly table.
+      $DB::single = 1 if ($symbol eq 'BMP1');
+      if ($gene =~ /^ENSG/ && exists($ensembl_table->{$gene})) {
+        $_ = "$symbol\t$ensembl_table->{$gene}\t$rest";
+      } elsif ($gene =~ /^ENSG/) {
+        $log->warn("Skipping record for $symbol, $gene due to no accessible Entrez Gene identifier");
+        next;
+      }
+
       $maf_fh->print($_);
     }
     $input_fh->close();

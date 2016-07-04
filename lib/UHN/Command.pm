@@ -45,7 +45,6 @@ sub get_signature {
 }
 
 sub get_signature_path {
-  $DB::single = 1;
   my ($self, $importer, $signature) = @_;
   my $cache_directory = $importer->cache_directory();
   my @fragments = ();

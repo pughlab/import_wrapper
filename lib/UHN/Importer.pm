@@ -31,6 +31,8 @@ has cache_directory => (
   is => 'rw'
 );
 
+with 'UHN::GeneMapping';
+
 sub BUILD {
   my ($self, $cfg) = @_;
   $self->logger($log);

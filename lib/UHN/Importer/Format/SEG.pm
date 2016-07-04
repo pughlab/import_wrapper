@@ -5,21 +5,10 @@ use warnings;
 
 use Carp;
 use Moose;
-use Text::CSV;
-use Set::IntervalTree;
 
 use FindBin qw($Bin);
 
 with 'UHN::Format';
-
-has gene_mapping_table => (
-  is => 'rw'
-);
-
-has gene_name_table => (
-  is => 'rw',
-  default => sub { {} }
-);
 
 has sample_name_table => (
   is => 'rw',
@@ -45,43 +34,9 @@ sub handles_source {
 
 sub scan {
   my ($self, $importer, $pattern, $directory, $source_data, @args) = @_;
-  $self->get_gene_mapping($importer);
+  $importer->get_gene_mapping();
   $log->info("Scanning $directory");
   $self->scan_paths($importer, \&_import_file, $pattern, $directory, $source_data, @args)
-}
-
-sub get_gene_mapping {
-  my ($self, $importer) = @_;
-
-  my $table = $self->gene_mapping_table();
-  return $table if (defined $table);
-
-  $log->info("Loading gene mapping table");
-  my $cfg = $importer->cfg();
-  my $gene_mapping_file = $cfg->{gene_mapping_file};
-  $gene_mapping_file = File::Spec->rel2abs($gene_mapping_file, $FindBin::Bin);
-
-  my $csv = Text::CSV->new({binary => 1}) or die "Cannot use CSV: ".Text::CSV->error_diag();
-  open my $fh, "<:encoding(utf8)", $gene_mapping_file or die "$gene_mapping_file: $!";
-
-  my $name_table = $self->gene_name_table();
-  my $headers = $csv->getline($fh);
-
-  $table = {};
-  while (my $row = $csv->getline($fh)) {
-    my ($ensembl, $chrom, $start, $end, $strand, $symbol, $entrez_gene_id) = @$row;
-    $entrez_gene_id = $entrez_gene_id + 0;
-
-    if (! exists($table->{$chrom})) {
-      $table->{$chrom} = Set::IntervalTree->new();
-    }
-
-    $name_table->{$entrez_gene_id} = {chrom => $chrom, strand => $strand, start => $start, end => $end, symbol => $symbol};
-    $table->{$chrom}->insert({ensembl => $ensembl, chrom => $chrom, strand => $strand, start => $start, end => $end, symbol => $symbol, entrez_gene_id => $entrez_gene_id}, $start, $end);
-  }
-
-  $self->gene_mapping_table($table);
-  return $table;
 }
 
 sub _import_file {
@@ -176,7 +131,7 @@ sub write_segment_data {
 
 sub add_segment {
   my ($self, $importer, @entries) = @_;
-  my $gene_mapping_table = $self->get_gene_mapping($importer);
+  my $gene_mapping_table = $importer->get_gene_mapping();
   my $segment_data = $self->segment_data();
   my $sample_name_table = $self->sample_name_table();
 
@@ -219,7 +174,7 @@ sub write_cnv_data {
   my $segment_data = $self->segment_data();
 
   my $sample_name_table = $self->sample_name_table();
-  my $gene_name_table = $self->gene_name_table();
+  my $gene_name_table = $importer->gene_name_table();
   my @samples = sort keys %$sample_name_table;
   my @genes = sort { $a <=> $b} keys %$segment_data;
 
