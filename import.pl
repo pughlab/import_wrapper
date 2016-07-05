@@ -3,6 +3,7 @@ use warnings;
 
 use FindBin;
 use lib "$FindBin::Bin/lib";
+use lib "$FindBin::Bin/local/lib/perl5";
 
 use Getopt::Long;
 use Config::Any;
@@ -118,7 +119,7 @@ Loads configuration from the given file.
 
 where to write the data for cBioPortal. This is now a required
 command line argument, so don't expect it to default to anything
-useful. 
+useful.
 
 =item B<--overwrite>
 
