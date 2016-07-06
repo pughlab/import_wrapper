@@ -76,7 +76,6 @@ sub execute {
   }
 
   $importer->logger()->info("Processing file ".$self->index().": ".$self->description());
-  $importer->logger()->info("Executing: " . join(" ", @{$self->arguments()}));
 
   $self->executed(1);
   my @args = ($self->script(), @{$self->arguments()});
@@ -86,6 +85,8 @@ sub execute {
 
   my $pid = $pm->start();
   return $pid if $pid;
+
+  $importer->logger()->info("Executing: " . join(" ", @{$self->arguments()}));
 
   system(@args) == 0 or do {
     $importer->logger()->error("Command failed ".$self->index().": status: $?");
