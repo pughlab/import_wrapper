@@ -89,6 +89,9 @@ sub finish {
 
   $self->write_cnv_data($importer);
   $self->write_cnv_meta_file($importer);
+
+  $self->write_cnv_data_discrete($importer);
+  $self->write_cnv_meta_file_discrete($importer);
 }
 
 my @seg_header = ("ID", "chrom", "loc.start", "loc.end", "num.mark", "seg.mean");
@@ -110,7 +113,7 @@ sub write_segment_data {
   $seg_fh->print($header1); # Print SEG header
 
   foreach my $seg (@segs) {
-    $log->info("Reading generated mutations data: $seg");
+    $log->info("Reading generated segments data: $seg");
     my $input_fh = IO::File->new($seg, "<") or carp "ERROR: Couldn't open input file: $seg!\n";
     while(<$input_fh>) {
       next if $_ eq $header1;
@@ -164,6 +167,23 @@ sub write_cnv_meta_file {
   $importer->write_meta_file($mutations_meta_file, \%meta);
 }
 
+sub write_cnv_meta_file_discrete {
+  my ($self, $importer) = @_;
+  my $cfg = $importer->cfg();
+
+  my %meta = ();
+  $meta{cancer_study_identifier} =         $cfg->{cancer_study}->{identifier};
+  $meta{stable_id} =                       $meta{cancer_study_identifier}."_gistic";
+  $meta{genetic_alteration_type} =         $cfg->{cnv_discrete}->{genetic_alteration_type};
+  $meta{datatype} =                        $cfg->{cnv_discrete}->{datatype};
+  $meta{show_profile_in_analysis_tab} =    $cfg->{cnv_discrete}->{show_profile_in_analysis_tab};
+  $meta{profile_description} =             $cfg->{cnv_discrete}->{profile_description};
+  $meta{profile_name} =                    $cfg->{cnv_discrete}->{profile_name};
+
+  my $mutations_meta_file = File::Spec->catfile($cfg->{OUTPUT}, "meta_cna.txt");
+  $importer->write_meta_file($mutations_meta_file, \%meta);
+}
+
 sub write_cnv_data {
   my ($self, $importer) = @_;
   my $cfg = $importer->cfg();
@@ -192,6 +212,68 @@ sub write_cnv_data {
       if (exists($entries->{$sample})) {
         my @entries = @{$entries->{$sample}};
         push @results, $entries[0]->[2];
+      } else {
+        push @results, "";
+      }
+    }
+    print $fh join("\t", @results)."\n";
+  }
+  close($fh);
+
+  return;
+}
+
+sub _get_thresholded_cnv {
+  my ($cfg, $score) = @_;
+
+  ## Only if we have a number...
+  if ($score =~ /\d/) {
+
+    my $category = undef;
+    my $thresholds = $cfg->{cnv_thresholds};
+    while(my ($k, $v) = each %$thresholds) {
+      my $lower = $v->{lower};
+      my $upper = $v->{upper};
+      $DB::single = 1;
+      if ($lower <= $score && $score < $upper) {
+        $category = $k;
+        last;
+      }
+    }
+
+    return $cfg->{cnv_threshold_codes}->{$category} // "";
+  }
+}
+
+sub write_cnv_data_discrete {
+  my ($self, $importer) = @_;
+  my $cfg = $importer->cfg();
+
+  my $mutations_data_file = File::Spec->catfile($cfg->{OUTPUT}, "data_cna.txt");
+  open my $fh, ">", $mutations_data_file or die("$mutations_data_file: $!");
+
+  my $segment_data = $self->segment_data();
+
+  my $sample_name_table = $self->sample_name_table();
+  my $gene_name_table = $importer->gene_name_table();
+  my @samples = sort keys %$sample_name_table;
+  my @genes = sort { $a <=> $b} keys %$segment_data;
+
+  my @headers = qw(Hugo_Symbol Entrez_Gene_Id);
+  push @headers, @samples;
+  print $fh join("\t", @headers)."\n";
+
+  for my $gene (@genes) {
+    my $gene_name = $gene_name_table->{$gene};
+    my $entries = $segment_data->{$gene};
+    my @results = ();
+    push @results, $gene_name->{symbol}, $gene;
+    for my $sample (@samples) {
+      $DB::single = 1 if (! $entries);
+      if (exists($entries->{$sample})) {
+        my @entries = @{$entries->{$sample}};
+        my $score = $entries[0]->[2];
+        push @results, _get_thresholded_cnv($cfg, $score);
       } else {
         push @results, "";
       }
