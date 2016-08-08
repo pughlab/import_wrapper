@@ -69,6 +69,39 @@ cnv:
   profile_description: 'Log2 copy-number values'
   reference_genome_id: 'hg19'
 
+cnv_discrete:
+  genetic_alteration_type: 'COPY_NUMBER_ALTERATION'
+  datatype: 'DISCRETE'
+  show_profile_in_analysis_tab: false
+  profile_name: 'Putative copy-number alterations'
+  profile_description: 'Putative copy-number from threshold settings'
+  reference_genome_id: 'hg19'
+
+## Thresholds are inclusive at the lower band, and exclusive at the upper band
+cnv_thresholds:
+  homozygous_deletion:
+    lower: -10
+    upper: -0.763437875100691
+  hemizygous_deletion:
+    lower: -0.763437875100691
+    upper: -0.40
+  no_change:
+    lower: -0.40
+    upper: 0.1
+  gain:
+    lower: 0.1
+    upper: 0.6
+  high_level_amplification:
+    lower: 0.6
+    upper: 1000.0
+
+cnv_threshold_codes:
+  homozygous_deletion: -2
+  hemizygous_deletion: -1
+  no_change: 0
+  gain: 1
+  high_level_amplification: 2
+
 clinical:
   genetic_alteration_type: 'CLINICAL'
   datatype: 'MIXED_ATTRIBUTES'
