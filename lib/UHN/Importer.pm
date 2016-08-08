@@ -175,12 +175,6 @@ sub write_clinical_data_file {
   my @headers = @{$cfg->{clinical_attributes}};
   push @headers, @{$cfg->{additional_clinical_attributes}};
 
-  my $output_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
-  $output_fh->print("#" . join("\t", map { $_->{name} } @headers) . "\n");
-  $output_fh->print("#" . join("\t", map { $_->{description} } @headers) . "\n");
-  $output_fh->print("#" . join("\t", map { $_->{type} } @headers) . "\n");
-  $output_fh->print("#" . join("\t", map { $_->{count} } @headers) . "\n");
-
   my @selected_headers = ();
   foreach my $header (@headers) {
     if ($selector eq 'SAMPLE' && $header->{name} eq 'PATIENT_ID') {
@@ -192,6 +186,12 @@ sub write_clinical_data_file {
       next;
     }
   };
+
+  my $output_fh = IO::File->new($output, ">") or croak "ERROR: Couldn't open output file: $output!\n";
+  $output_fh->print("#" . join("\t", map { $_->{name} } @selected_headers) . "\n");
+  $output_fh->print("#" . join("\t", map { $_->{description} } @selected_headers) . "\n");
+  $output_fh->print("#" . join("\t", map { $_->{type} } @selected_headers) . "\n");
+  $output_fh->print("#" . join("\t", map { $_->{count} } @selected_headers) . "\n");
 
   my @header_names = map { $_->{header}; } @selected_headers;
   $output_fh->print(join("\t", @header_names). "\n");
